@@ -95,7 +95,7 @@ function Dashboard({ auth, onNavigate }) {
                 ? "Administración"
                 : "Mi cuenta"}
           </span>
-          <h1>Hola, {auth.user.nombre}.</h1>
+          <h1>Hola, {auth.user.nombre}</h1>
           {!isAdmin && (
             <p>
               {auth.user.role === "doctor"
@@ -177,6 +177,7 @@ function Dashboard({ auth, onNavigate }) {
                 title="Citas de mis pacientes"
                 mode="practice"
                 onUpdate={update}
+                showPolicy={false}
               />
             </>
           )}

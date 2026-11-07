@@ -8,6 +8,7 @@ export const APPOINTMENT = {
   confirmed: "Confirmada",
   cancelled: "Cancelada",
   completed: "Completada",
+  past: "Pasada",
 };
 export const APPLICATION = {
   draft: "Borrador",

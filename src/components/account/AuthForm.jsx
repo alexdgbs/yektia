@@ -99,7 +99,7 @@ export default function AuthForm({ auth }) {
     <section className="account-auth page-width">
       <div className="account-auth__intro">
         <span className="eyebrow">Mi cuenta</span>
-        <h1>Accede a tu cuenta.</h1>
+        <h1>Accede a tu cuenta</h1>
         <p>
           Consulta tus citas y actualiza tus datos desde aquí.
         </p>

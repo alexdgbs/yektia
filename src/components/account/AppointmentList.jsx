@@ -8,6 +8,7 @@ export default function AppointmentList({
   mode,
   onUpdate,
   loading,
+  showPolicy = true,
 }) {
   if (loading) {
     return (
@@ -33,7 +34,16 @@ export default function AppointmentList({
       {items.length ? (
         <div className="appointments-list__items">
           {items.map((item) => {
-            const active = !["cancelled", "completed"].includes(item.status);
+            const isPast = new Date(item.slot?.startsAt).getTime() < Date.now();
+            // Una cita pasada ya no está "Confirmada": se muestra como
+            // pasada y ya no se puede cancelar.
+            const displayStatus =
+              isPast && ["pending", "confirmed"].includes(item.status)
+                ? "past"
+                : item.status;
+            const active = !["cancelled", "completed", "past"].includes(
+              displayStatus,
+            );
             const doctorRemoved =
               !item.doctor ||
               item.doctor.verificationStatus === "removed" ||
@@ -70,9 +80,9 @@ export default function AppointmentList({
 
                 <div className="appointment-meta">
                   <span
-                    className={`appointment-status appointment-status--${item.status}`}
+                    className={`appointment-status appointment-status--${displayStatus}`}
                   >
-                    {APPOINTMENT[item.status]}
+                    {APPOINTMENT[displayStatus]}
                   </span>
 
                   <div className="appointment-actions">
@@ -104,9 +114,11 @@ export default function AppointmentList({
         <p className="empty-state">No hay citas en esta sección.</p>
       )}
 
-      <p className="cancellation-policy">
-        Los pacientes pueden cancelar en línea hasta 24 horas antes.
-      </p>
+      {showPolicy && (
+        <p className="cancellation-policy">
+          Los pacientes pueden cancelar en línea hasta 24 horas antes.
+        </p>
+      )}
     </section>
   );
 }
