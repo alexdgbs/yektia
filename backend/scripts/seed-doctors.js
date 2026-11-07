@@ -5,10 +5,13 @@
 //   npm run seed:doctors
 //
 // No borra nada: por cada doctor de ejemplo revisa su cédula y solo lo crea
-// si aún no existe. Los perfiles quedan con verificationStatus "verified"
-// para que aparezcan en el directorio, y con fuente "ejemplo" para
-// distinguirlos de los perfiles reales. Las cédulas y los datos son
-// inventados para la demostración, no corresponden a médicos reales.
+// si aún no existe. Mariana Torres (cédula 006210025) es la excepción: el
+// seed completa sus datos si ya existe (descripción, precio, idiomas,
+// horarios) y solo la crea si no está. Los perfiles quedan con
+// verificationStatus "verified" para que aparezcan en el directorio, y los
+// de ejemplo con fuente "ejemplo" para distinguirlos de los perfiles reales.
+// Las cédulas y los datos de ejemplo son inventados para la demostración,
+// no corresponden a médicos reales.
 import "dotenv/config";
 import mongoose from "mongoose";
 import { Doctor } from "../src/models/Doctor.js";
@@ -22,6 +25,26 @@ const WEEKDAYS = [
 ];
 
 const EXAMPLE_DOCTORS = [
+  {
+    // Perfil real de la doctora del proyecto: se completa si ya existe.
+    completar: true,
+    nombre: "Mariana Torres",
+    especialidad: "Medicina General",
+    descripcion:
+      "Médica general con atención en salud preventiva, seguimiento de enfermedades comunes y orientación para toda la familia.",
+    cedula: "006210025",
+    telefono: "",
+    ubicacion: "Consultorio Médico Vitala, Guadalajara, Jalisco",
+    disponibilidad: "Lun a vie, 9:00–18:00",
+    precio: "600",
+    idiomas: ["Español", "Inglés"],
+    seguros: [],
+    verificationStatus: "verified",
+    appointmentDuration: 45,
+    timezoneOffset: -360,
+    weeklySchedule: WEEKDAYS,
+    fuente: "",
+  },
   {
     nombre: "Dra. Lucía Mendoza Ruiz",
     especialidad: "Pediatría",
@@ -127,8 +150,42 @@ async function main() {
   if (!uri) throw new Error("Falta la variable MONGO_URI en backend/.env");
   await mongoose.connect(uri);
   let created = 0;
+  let updated = 0;
   let skipped = 0;
   for (const doctor of EXAMPLE_DOCTORS) {
+    if (doctor.completar) {
+      const fields = { ...doctor };
+      delete fields.completar;
+      const result = await Doctor.updateOne(
+        { cedula: doctor.cedula },
+        {
+          $set: {
+            descripcion: fields.descripcion,
+            precio: fields.precio,
+            idiomas: fields.idiomas,
+            ubicacion: fields.ubicacion,
+            disponibilidad: fields.disponibilidad,
+            weeklySchedule: fields.weeklySchedule,
+            appointmentDuration: fields.appointmentDuration,
+            timezoneOffset: fields.timezoneOffset,
+            verificationStatus: fields.verificationStatus,
+          },
+          $setOnInsert: {
+            nombre: fields.nombre,
+            especialidad: fields.especialidad,
+            cedula: fields.cedula,
+            telefono: fields.telefono,
+            seguros: fields.seguros,
+            fuente: fields.fuente,
+          },
+        },
+        { upsert: true },
+      );
+      if (result.upsertedCount) created += 1;
+      else if (result.modifiedCount) updated += 1;
+      else skipped += 1;
+      continue;
+    }
     const existing = await Doctor.findOne({ cedula: doctor.cedula });
     if (existing) {
       skipped += 1;
@@ -138,7 +195,7 @@ async function main() {
     created += 1;
   }
   console.log(
-    `Doctores de ejemplo: ${created} creados, ${skipped} ya existían.`,
+    `Doctores de ejemplo: ${created} creados, ${updated} actualizados, ${skipped} ya existían.`,
   );
 }
 

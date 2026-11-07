@@ -148,7 +148,7 @@ export async function createAppointment(request, response, next) {
     const appointment = await bookAppointment(request.user, request.body);
     appointment.$session(null);
     const populated = await appointment.populate([
-      { path: "doctor", select: "nombre especialidad" },
+      { path: "doctor", select: "nombre especialidad verificationStatus" },
       { path: "patient", select: "nombre email" },
       { path: "slot" },
     ]);
@@ -189,7 +189,7 @@ export async function createAppointment(request, response, next) {
 export async function listAppointments(request, response, next) {
   try {
     const populate = [
-      { path: "doctor", select: "nombre especialidad" },
+      { path: "doctor", select: "nombre especialidad verificationStatus" },
       { path: "patient", select: "nombre email" },
       { path: "slot" },
     ];
@@ -251,7 +251,7 @@ export async function updateAppointment(request, response, next) {
     };
     {
       const current = await Appointment.findOne(query).populate([
-        { path: "doctor", select: "nombre especialidad" },
+        { path: "doctor", select: "nombre especialidad verificationStatus" },
         { path: "patient", select: "nombre email" },
         { path: "slot" },
       ]);
@@ -273,9 +273,14 @@ export async function updateAppointment(request, response, next) {
       if (request.body.status === "cancelled") {
         const treatingDoctor =
           request.user.role === "doctor" &&
-          current.doctor._id.toString() === request.user.doctor?.toString();
+          current.doctor?._id.toString() ===
+            request.user.doctor?.toString();
+        const doctorRemoved =
+          !current.doctor ||
+          current.doctor.verificationStatus === "removed";
         if (
           !treatingDoctor &&
+          !doctorRemoved &&
           !patientCancellationAllowed(current.slot.startsAt)
         )
           return response.status(409).json({
@@ -291,14 +296,16 @@ export async function updateAppointment(request, response, next) {
     const appointment = await Appointment.findOneAndUpdate(query, update, {
       new: true,
     }).populate([
-      { path: "doctor", select: "nombre especialidad" },
+      { path: "doctor", select: "nombre especialidad verificationStatus" },
       { path: "patient", select: "nombre email" },
       { path: "slot" },
     ]);
     if (!appointment)
       return response.status(404).json({ message: "Cita no encontrada" });
     if (request.body.status === "cancelled") {
-      const doctor = await Doctor.findById(appointment.doctor._id);
+      const doctor = appointment.doctor?._id
+        ? await Doctor.findById(appointment.doctor._id)
+        : null;
       if (doctor && slotMatchesSchedule(doctor, appointment.slot.startsAt))
         await AvailabilitySlot.updateOne(
           { _id: appointment.slot._id },
@@ -307,15 +314,18 @@ export async function updateAppointment(request, response, next) {
       else await AvailabilitySlot.deleteOne({ _id: appointment.slot._id });
     }
     const io = request.app.get("io");
-    io.emit("agenda_actualizada", {
-      doctorId: appointment.doctor._id.toString(),
-    });
+    if (appointment.doctor?._id)
+      io.emit("agenda_actualizada", {
+        doctorId: appointment.doctor._id.toString(),
+      });
     io.to(`user:${appointment.patient._id}`).emit("cita_actualizada", {
       appointmentId: appointment.id,
     });
-    const doctorUser = await User.findOne({
-      doctor: appointment.doctor._id,
-    }).select("_id");
+    const doctorUser = appointment.doctor?._id
+      ? await User.findOne({
+          doctor: appointment.doctor._id,
+        }).select("_id")
+      : null;
     if (doctorUser)
       io.to(`user:${doctorUser.id}`).emit("cita_actualizada", {
         appointmentId: appointment.id,

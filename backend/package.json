@@ -8,6 +8,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "seed:doctors": "node scripts/seed-doctors.js",
+    "clean:orphans": "node scripts/clean-orphan-appointments.js",
     "test": "vitest run"
   },
   "dependencies": {

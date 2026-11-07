@@ -111,6 +111,26 @@ intactos los perfiles que ya están en la base. Los doctores llevan
 vivo seguirá mostrando los perfiles que ya tiene hasta que se corra este
 seed contra su base de MongoDB.
 
+El mismo seed completa el perfil de Mariana Torres (cédula 006210025) si ya
+existe: descripción, precio $600 MXN, idiomas Español e Inglés, ubicación y
+horarios lun–vie. Si ya corriste el seed antes, córrelo de nuevo para que se
+apliquen esos datos.
+
+### Citas huérfanas
+
+Cuando un profesional retira su perfil, sus citas quedan sin especialista
+("Profesional retirado"). En la cuenta se muestran como "El profesional ya
+no está disponible" y se pueden cancelar. Para listarlas y borrarlas de la
+base:
+
+```bash
+cd backend
+npm run clean:orphans            # solo las lista, no borra nada
+npm run clean:orphans -- --borrar  # las borra junto con su hueco
+```
+
+El script está en `backend/scripts/clean-orphan-appointments.js`.
+
 ## Sesiones
 
 La cookie de sesión se llama `yektia_session` (`__Host-yektia_session` en
