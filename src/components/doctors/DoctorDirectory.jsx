@@ -10,6 +10,7 @@ import {
 import LoadingSkeleton from "../LoadingSkeleton";
 import DoctorCard from "./DoctorCard";
 import {
+  doctorFirstName,
   doctorInitials,
   doctorPrice,
   doctorRating,
@@ -390,7 +391,7 @@ export default function DoctorDirectory({
             <div className="compare-people">
               {compared.map((doctor) => (
                 <span key={doctor._id}>
-                  {doctor.nombre.replace(/^(Dra?\.)\s/, "").split(" ")[0]}{" "}
+                  {doctorFirstName(doctor.nombre)}{" "}
                   <button
                     type="button"
                     onClick={() => toggleCompare(doctor)}
@@ -454,14 +455,14 @@ export default function DoctorDirectory({
                 </div>
                 {compared.map((doctor) => {
                   const { count, average } = doctorRating(doctor);
-                  const price = doctorPrice(doctor, "Por confirmar");
+                  const price = doctorPrice(doctor);
                   return (
                     <div className="comparison-column" key={doctor._id}>
                       <span className="comparison-doctor">
                         <strong>{doctor.nombre}</strong>
                         <small>{doctor.especialidad}</small>
                       </span>
-                      <span>{doctor.descripcion || "Por confirmar"}</span>
+                      <span>{doctor.descripcion || "Sin descripción"}</span>
                       <span>
                         {count ? (
                           <>
@@ -482,7 +483,7 @@ export default function DoctorDirectory({
                         )}
                       </span>
                       <span>{price}</span>
-                      <span>{doctor.ubicacion || "Por confirmar"}</span>
+                      <span>{doctor.ubicacion || "Sin ubicación"}</span>
                       <span>Consulta particular</span>
                       <button
                         type="button"

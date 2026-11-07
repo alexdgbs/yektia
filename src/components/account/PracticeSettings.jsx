@@ -1,6 +1,7 @@
 import LoadingSkeleton from "../LoadingSkeleton";
 import { useEffect, useState } from "react";
 import { accountApi } from "../../services/accountApi";
+import { MAX_CONSULTATION_PRICE } from "../../utils/constants";
 export default function PracticeSettings({ doctorId }) {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
@@ -66,7 +67,7 @@ export default function PracticeSettings({ doctorId }) {
           <input
             type="number"
             min="0"
-            max="100000"
+            max={MAX_CONSULTATION_PRICE}
             step="1"
             required
             value={form.price}

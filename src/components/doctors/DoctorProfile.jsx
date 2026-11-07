@@ -346,7 +346,7 @@ export default function DoctorProfile({
                   : ""
               }
             >
-              {doctorPrice(doctor, "Precio por confirmar")}
+              {doctorPrice(doctor)}
             </strong>
           </div>
           {!isOwnProfile && (

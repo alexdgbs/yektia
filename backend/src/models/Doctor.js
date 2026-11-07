@@ -1,3 +1,4 @@
+import { MEXICO_CITY_OFFSET_MINUTES } from "../utils/constants.js";
 import mongoose from "mongoose";
 
 const ratingSchema = new mongoose.Schema({
@@ -44,7 +45,12 @@ const doctorSchema = new mongoose.Schema(
       enum: [15, 30, 45, 60, 90],
       default: 45,
     },
-    timezoneOffset: { type: Number, min: -720, max: 840, default: -360 },
+    timezoneOffset: {
+      type: Number,
+      min: -720,
+      max: 840,
+      default: MEXICO_CITY_OFFSET_MINUTES,
+    },
     weeklySchedule: { type: [scheduleRuleSchema], default: [] },
     blockedDates: { type: [String], default: [] },
     availabilitySyncedAt: { type: Date, default: null },

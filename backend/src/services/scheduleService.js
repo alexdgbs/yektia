@@ -1,12 +1,12 @@
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
+import { MEXICO_CITY_OFFSET_MINUTES } from "../utils/constants.js";
+import { dateKeyAtOffset } from "../utils/dates.js";
 
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const minutes = (value) => {
   const match = TIME.exec(value);
   return match ? Number(match[1]) * 60 + Number(match[2]) : -1;
 };
-const dateKey = (date, offset) =>
-  new Date(date.getTime() + offset * 60_000).toISOString().slice(0, 10);
 export const isCalendarDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);
@@ -73,7 +73,7 @@ export function validateSchedule(input) {
 }
 
 export function buildUpcomingSlots(doctor, now = new Date(), days = 60) {
-  const offset = doctor.timezoneOffset ?? -360;
+  const offset = doctor.timezoneOffset ?? MEXICO_CITY_OFFSET_MINUTES;
   const shifted = new Date(now.getTime() + offset * 60_000);
   const base = new Date(
     Date.UTC(
@@ -115,9 +115,9 @@ export function buildUpcomingSlots(doctor, now = new Date(), days = 60) {
 }
 
 export function slotMatchesSchedule(doctor, startsAt) {
-  const offset = doctor.timezoneOffset ?? -360;
+  const offset = doctor.timezoneOffset ?? MEXICO_CITY_OFFSET_MINUTES;
   const local = new Date(startsAt.getTime() + offset * 60_000);
-  if ((doctor.blockedDates || []).includes(dateKey(startsAt, offset)))
+  if ((doctor.blockedDates || []).includes(dateKeyAtOffset(startsAt, offset)))
     return false;
   const minute = local.getUTCHours() * 60 + local.getUTCMinutes();
   return (doctor.weeklySchedule || []).some(

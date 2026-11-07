@@ -24,7 +24,7 @@ export default function DoctorCard({
   const [imageFailed, setImageFailed] = useState(false);
   const initials = doctorInitials(doctor.nombre);
   const { count: ratingCount, average } = doctorRating(doctor);
-  const formattedPrice = doctorPrice(doctor, "Precio por confirmar");
+  const formattedPrice = doctorPrice(doctor);
   const pricePending = doctor.precio === "" || doctor.precio == null;
   const verified = doctor.verificationStatus === "verified";
 

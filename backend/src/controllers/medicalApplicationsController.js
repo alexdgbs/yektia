@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { AuditEvent } from "../models/AuditEvent.js";
 import { Doctor } from "../models/Doctor.js";
 import { MedicalApplication } from "../models/MedicalApplication.js";
@@ -6,9 +5,9 @@ import { MedicalDocument } from "../models/MedicalDocument.js";
 import { User } from "../models/User.js";
 import { Appointment } from "../models/Appointment.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
+import { cleanText, isValidId, parseLimit } from "../utils/validation.js";
 
 const editableStatuses = ["draft", "changes_requested"];
-const validId = (value) => mongoose.isValidObjectId(value);
 const documentTypes = ["identity", "professional_license", "specialty_license"];
 const editableApplication = (applicant) =>
   MedicalApplication.findOne({ applicant }).then((application) =>
@@ -38,8 +37,6 @@ export const requiredMedicalDocumentTypes = (specialtyLicense = "") => [
   "professional_license",
   ...(specialtyLicense.trim() ? ["specialty_license"] : []),
 ];
-const clean = (value, max = 160) =>
-  typeof value === "string" ? value.trim().slice(0, max) : "";
 const personNamePattern = /^[\p{L}\p{M}.' -]+$/u;
 const specialtyPattern = /^[\p{L}\p{M}.'() /&-]+$/u;
 const digitsPattern = /^\d+$/;
@@ -66,7 +63,7 @@ export const matchesDocumentSignature = (buffer, mimeType) => {
 };
 const fileName = (value, fallback) => {
   try {
-    return clean(decodeURIComponent(value || ""), 180) || fallback;
+    return cleanText(decodeURIComponent(value || ""), 180) || fallback;
   } catch {
     return fallback;
   }
@@ -147,12 +144,12 @@ export async function getMyApplication(request, response, next) {
 export async function saveMyApplication(request, response, next) {
   try {
     const payload = {
-      legalName: clean(request.body.legalName, 120),
-      professionalLicense: clean(request.body.professionalLicense, 30),
-      specialty: clean(request.body.specialty, 100),
-      specialtyLicense: clean(request.body.specialtyLicense, 30),
-      phone: clean(request.body.phone, 30),
-      location: clean(request.body.location, 160),
+      legalName: cleanText(request.body.legalName, 120),
+      professionalLicense: cleanText(request.body.professionalLicense, 30),
+      specialty: cleanText(request.body.specialty, 100),
+      specialtyLicense: cleanText(request.body.specialtyLicense, 30),
+      phone: cleanText(request.body.phone, 30),
+      location: cleanText(request.body.location, 160),
     };
     if (
       !payload.legalName ||
@@ -323,7 +320,7 @@ export async function submitMyApplication(request, response, next) {
 
 export async function listApplications(request, response, next) {
   try {
-    const status = clean(request.query.status, 30);
+    const status = cleanText(request.query.status, 30);
     const allowedStatuses = [
       "draft",
       "submitted",
@@ -334,10 +331,7 @@ export async function listApplications(request, response, next) {
     ];
     if (status && !allowedStatuses.includes(status))
       return response.status(400).json({ message: "Estado inválido" });
-    const requestedLimit = Number.parseInt(request.query.limit, 10);
-    const limit = Number.isFinite(requestedLimit)
-      ? Math.min(Math.max(requestedLimit, 1), 100)
-      : 50;
+    const limit = parseLimit(request.query.limit);
     const query = status ? { status } : {};
     const applications = await MedicalApplication.find(query)
       .populate("applicant", "nombre email")
@@ -353,7 +347,7 @@ export async function listApplications(request, response, next) {
 
 export async function downloadDocument(request, response, next) {
   try {
-    if (!validId(request.params.id) || !validId(request.params.documentId))
+    if (!isValidId(request.params.id) || !isValidId(request.params.documentId))
       return response.status(400).json({ message: "Identificador inválido" });
     const document = await MedicalDocument.findOne({
       _id: request.params.documentId,
@@ -374,10 +368,10 @@ export async function downloadDocument(request, response, next) {
 
 export async function reviewApplication(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
-    const status = clean(request.body.status, 30);
-    const reviewNote = clean(request.body.reviewNote, 1000);
+    const status = cleanText(request.body.status, 30);
+    const reviewNote = cleanText(request.body.reviewNote, 1000);
     if (!["changes_requested", "approved", "rejected"].includes(status))
       return response.status(400).json({ message: "Decisión inválida" });
     if (status !== "approved" && !reviewNote)
@@ -450,7 +444,7 @@ export async function reviewApplication(request, response, next) {
 
 export async function applicationAudit(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
     const events = await AuditEvent.find({
       entityType: "medical_application",
@@ -475,7 +469,7 @@ export async function applicationAudit(request, response, next) {
 
 export async function deleteApplication(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
     const application = await MedicalApplication.findOne({
       _id: request.params.id,
@@ -506,7 +500,7 @@ export async function deleteApplication(request, response, next) {
 
 export async function withdrawDoctor(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
     const application = await MedicalApplication.findOne({
       _id: request.params.id,
@@ -516,7 +510,7 @@ export async function withdrawDoctor(request, response, next) {
     if (!application)
       return response.status(409).json({ message: "El perfil no está activo" });
     const note =
-      clean(request.body.note, 1000) ||
+      cleanText(request.body.note, 1000) ||
       "Perfil retirado del directorio a solicitud del profesional.";
     const futureSlots = await AvailabilitySlot.find({
       doctor: application.doctor,
@@ -585,7 +579,7 @@ export async function withdrawDoctor(request, response, next) {
 
 export async function eraseDoctorData(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
     if (request.body.confirmation !== "ELIMINAR")
       return response
