@@ -9,7 +9,8 @@ valoraciones y agendas en tiempo real.
 
 - `src/`: frontend (páginas, componentes, servicios REST y Socket.IO).
 - `backend/`: API REST, Socket.IO y modelos de MongoDB.
-- `.github/workflows/quality.yml`: valida ESLint y el build del frontend.
+- `.github/workflows/quality.yml`: valida ESLint y el build del frontend, y
+  corre los tests del backend (`npm test` en `backend/`).
 
 ## Frontend
 
@@ -38,7 +39,9 @@ VITE_GOOGLE_CLIENT_ID=tu_client_id_web.apps.googleusercontent.com
   Ese rewrite es estático: Vercel no permite interpolar variables de entorno
   en `vercel.json`. Para cambiar el backend fijo, edita el destino del
   rewrite en `vercel.json` o define `VITE_API_REST` en el proyecto de Vercel
-  y vuelve a desplegar.
+  y vuelve a desplegar. El servicio de Render se sigue llamando
+  `caresync-anat` (nombre anterior a Yektia); si se renombra en Render, hay
+  que actualizar el destino del rewrite en `vercel.json`.
 - `VITE_SOCKET_URL` es el origen de Socket.IO; si se omite pero se define
   `VITE_API_REST`, se deriva de esa URL.
 - Como las sesiones usan cookies, el backend debe permitir el origen exacto
@@ -130,6 +133,20 @@ npm run clean:orphans -- --borrar  # las borra junto con su hueco
 ```
 
 El script está en `backend/scripts/clean-orphan-appointments.js`.
+
+### Solicitud médica y rol admin
+
+Para aparecer en el directorio, un médico crea su cuenta con Google y envía
+una solicitud médica con su cédula y documentos. Un usuario con rol `admin`
+(la lista de correos está en la variable `ADMIN_EMAILS` del backend) revisa
+la solicitud y la aprueba, la rechaza o pide cambios. Solo con la solicitud
+aprobada el perfil queda publicado con `verificationStatus: "verified"`.
+
+### Límite de uso
+
+Las rutas de interacción (valorar, comentar, agendar, solicitudes) tienen un
+límite de 12 solicitudes por minuto y ruta por usuario o IP. Al superarlo la
+API responde 429.
 
 ## Sesiones
 
