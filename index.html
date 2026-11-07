@@ -15,7 +15,7 @@
         try {
           saved = localStorage.getItem("yektia-theme");
         } catch {
-          // The default theme is used when browser storage is unavailable.
+          // sin storage, queda el tema claro.
         }
         const theme = saved === "dark" || saved === "light" ? saved : "light";
         const color = theme === "dark" ? "#111315" : "#f4f5f3";

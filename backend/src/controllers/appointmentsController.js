@@ -52,7 +52,7 @@ export async function listAvailability(request, response, next) {
     })
       .select("startsAt endsAt status")
       .sort({ startsAt: 1 })
-      // A 60-day schedule can contain up to 5,700 real 15-minute slots.
+      // 60 días son hasta 5.700 huecos de 15 minutos.
       .limit(6000);
     return response.json(slots);
   } catch (error) {

@@ -9,6 +9,7 @@ import ScheduleSettings from "../components/account/ScheduleSettings";
 import PracticeSettings from "../components/account/PracticeSettings";
 import AdminDashboard from "../components/account/AdminDashboard";
 import AppointmentList from "../components/account/AppointmentList";
+import { scrollIntoViewSmooth } from "../utils/scroll";
 import MedicalApplicationPanel, {
   DoctorVerificationStatus,
 } from "../components/account/MedicalApplicationPanel";
@@ -112,20 +113,13 @@ function Dashboard({ auth, onNavigate }) {
           {!isAdmin && (
             <a
               className="primary-button"
-              href="/#directorio"
+              href="/"
               onClick={(event) => {
                 event.preventDefault();
                 onNavigate?.("/");
-                window.requestAnimationFrame(() => {
-                  document.getElementById("directorio")?.scrollIntoView({
-                    behavior: window.matchMedia(
-                      "(prefers-reduced-motion: reduce)",
-                    ).matches
-                      ? "auto"
-                      : "smooth",
-                    block: "start",
-                  });
-                });
+                window.requestAnimationFrame(() =>
+                  scrollIntoViewSmooth(document.getElementById("directorio")),
+                );
               }}
             >
               Buscar especialista

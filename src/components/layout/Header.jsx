@@ -45,7 +45,7 @@ export default function Header({
     try {
       localStorage.setItem("yektia-theme", theme);
     } catch {
-      // The UI remains usable when browser storage is unavailable.
+      // si no hay storage, la interfaz sigue funcionando.
     }
   }, [theme]);
 

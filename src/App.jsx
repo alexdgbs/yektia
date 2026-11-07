@@ -7,6 +7,7 @@ import DoctorPage from "./pages/DoctorPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { useDoctors } from "./hooks/useDoctors";
 import { useAuth } from "./hooks/useAuth";
+import { scrollIntoViewSmooth } from "./utils/scroll";
 import AccountPage from "./pages/AccountPage";
 import "./styles/index.css";
 
@@ -84,19 +85,14 @@ export default function App() {
   };
 
   const closeDoctor = useCallback(() => {
-    window.history.replaceState({}, "", "/#directorio");
+    window.history.replaceState({}, "", "/");
     setSelectedDoctorId("");
     setCurrentPath("/");
     setOpenCalendarOnProfile(false);
     setDoctorLookup("idle");
-    window.requestAnimationFrame(() => {
-      document.getElementById("directorio")?.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-        block: "start",
-      });
-    });
+    window.requestAnimationFrame(() =>
+      scrollIntoViewSmooth(document.getElementById("directorio")),
+    );
   }, []);
 
   const showingAccount = currentPath === "/cuenta";

@@ -17,6 +17,7 @@ import {
 } from "./doctorPresentation";
 import { getAccountKey } from "../../hooks/useAuth";
 import AppointmentPicker from "../appointments/AppointmentPicker";
+import { scrollIntoViewSmooth } from "../../utils/scroll";
 
 export default function DoctorProfile({
   doctor,
@@ -57,26 +58,26 @@ export default function DoctorProfile({
   const favoriteNoticeText =
     favoriteNotice.userId === accountKey ? favoriteNotice.text : "";
 
-  const closeCalendar = useCallback(() => {
-    setShowCalendar(false);
+  const setAgendaParam = (open) => {
     const url = new URL(window.location.href);
-    if (url.searchParams.has("agenda")) {
-      url.searchParams.delete("agenda");
-      const nextUrl = `${url.pathname}${url.search}${url.hash}`;
-      window.history.replaceState({}, "", nextUrl);
-    }
-  }, []);
-
-  const openCalendar = useCallback(() => {
-    setShowCalendar(true);
-    setShowReviewComposer(false);
-    const url = new URL(window.location.href);
-    url.searchParams.set("agenda", "1");
+    if (open) url.searchParams.set("agenda", "1");
+    else url.searchParams.delete("agenda");
     window.history.replaceState(
       {},
       "",
       `${url.pathname}${url.search}${url.hash}`,
     );
+  };
+
+  const closeCalendar = useCallback(() => {
+    setShowCalendar(false);
+    setAgendaParam(false);
+  }, []);
+
+  const openCalendar = useCallback(() => {
+    setShowCalendar(true);
+    setShowReviewComposer(false);
+    setAgendaParam(true);
   }, []);
 
   useEffect(() => {
@@ -98,12 +99,7 @@ export default function DoctorProfile({
 
   useEffect(() => {
     if (!showReviewComposer) return;
-    reviewComposerRef.current?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-      block: "nearest",
-    });
+    scrollIntoViewSmooth(reviewComposerRef.current, "nearest");
   }, [showReviewComposer]);
 
   const toggleFavorite = async () => {
