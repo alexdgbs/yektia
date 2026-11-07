@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Yektia">
-  <rect x="3" y="3" width="58" height="58" rx="17" fill="#3b705e"/>
-  <path d="M22 20 L32 34 L42 20" fill="none" stroke="#f5faf7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M32 34 L32 46" fill="none" stroke="#f5faf7" stroke-width="7" stroke-linecap="round"/>
+  <rect x="2" y="2" width="60" height="60" rx="27" fill="#111318"/>
+  <path d="M21 19 L32 33 L43 19" fill="none" stroke="#f5faf7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 33 L32 46" fill="none" stroke="#f5faf7" stroke-width="7" stroke-linecap="round"/>
 </svg>

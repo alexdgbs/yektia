@@ -1954,16 +1954,18 @@
     margin-bottom: 11px;
     padding: 13px;
     border-radius: 17px;
+    overflow: clip;
   }
 
   .feed-toolbar {
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
+    align-items: start;
     gap: 8px 10px;
   }
 
   .feed-toolbar__context {
     min-width: 0;
+    gap: 2px 10px;
   }
 
   .feed-toolbar__context h2 {
@@ -1972,6 +1974,7 @@
   }
 
   .feed-toolbar .favorite-filter {
+    align-self: start;
     justify-content: flex-end;
     min-width: 0;
   }
@@ -1991,6 +1994,19 @@
 
   .feed-toolbar .favorite-filter__label {
     display: none;
+  }
+
+  .directory-search {
+    min-height: 44px;
+  }
+
+  .feed-categories {
+    gap: 8px;
+    width: 100%;
+  }
+
+  .feed-categories button {
+    max-width: 100%;
   }
 
   .feed-rail--right {
