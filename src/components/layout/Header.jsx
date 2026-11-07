@@ -117,31 +117,6 @@ export default function Header({
             )}
           </button>
 
-          <div className="header-search">
-            <FiSearch aria-hidden="true" />
-            <label className="sr-only" htmlFor="header-specialist-search">
-              Buscar especialistas
-            </label>
-            <input
-              id="header-specialist-search"
-              type="search"
-              value={searchQuery}
-              onChange={updateSearch}
-              placeholder="Buscar especialista"
-              autoComplete="off"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                className="header-search__clear"
-                onClick={() => onSearchChange("")}
-                aria-label="Limpiar búsqueda"
-              >
-                <FiX aria-hidden="true" />
-              </button>
-            )}
-          </div>
-
           <div className="header-actions">
             <div className="header-desktop-actions">
               <a

@@ -14,8 +14,8 @@ import {
   doctorPrice,
   doctorRating,
   formatCount,
+  matchesDoctorQuery,
 } from "./doctorPresentation";
-import { getAccountKey } from "../../hooks/useAuth";
 
 export default function DoctorDirectory({
   doctors,
@@ -26,36 +26,36 @@ export default function DoctorDirectory({
   query = "",
   onQueryChange = () => {},
   visibleDoctorId = "",
-  onServerFilterChange = () => {},
 }) {
   const [compared, setCompared] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState("Todas");
-  const [favoriteIds, setFavoriteIds] = useState(
+  // Los favoritos se leen directo de la cuenta, no de un estado aparte:
+  // así el contador y el filtro nunca se desincronizan.
+  const favoriteIds = useMemo(
     () => new Set((auth.user?.favoriteDoctorIds || []).map(String)),
+    [auth.user],
   );
-  const accountUserId = auth.user ? getAccountKey(auth.user) : null;
-  const accountFavoritesKey = [...(auth.user?.favoriteDoctorIds || [])]
-    .map(String)
-    .sort()
-    .join(",");
+  // Solo cuentan los guardados que siguen en el directorio.
+  const savedDoctors = useMemo(
+    () => doctors.filter((doctor) => favoriteIds.has(String(doctor._id))),
+    [doctors, favoriteIds],
+  );
   const suggestions = doctors
     .filter((doctor) => String(doctor._id) !== String(visibleDoctorId))
     .slice(0, 5);
-  const filtered = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase("es");
-    return doctors.filter(
-      (doctor) =>
-        (selectedSpecialty === "Todas" ||
-          doctor.especialidad === selectedSpecialty) &&
-        (!favoritesOnly || favoriteIds.has(String(doctor._id))) &&
-        (!q ||
-          `${doctor.nombre} ${doctor.especialidad} ${doctor.ubicacion || ""}`
-            .toLocaleLowerCase("es")
-            .includes(q)),
-    );
-  }, [doctors, query, selectedSpecialty, favoritesOnly, favoriteIds]);
+  const filtered = useMemo(
+    () =>
+      doctors.filter(
+        (doctor) =>
+          (selectedSpecialty === "Todas" ||
+            doctor.especialidad === selectedSpecialty) &&
+          (!favoritesOnly || favoriteIds.has(String(doctor._id))) &&
+          matchesDoctorQuery(doctor, query),
+      ),
+    [doctors, query, selectedSpecialty, favoritesOnly, favoriteIds],
+  );
 
   const specialties = useMemo(
     () => [
@@ -64,17 +64,6 @@ export default function DoctorDirectory({
     ],
     [doctors],
   );
-
-  useEffect(() => {
-    onServerFilterChange({
-      q: query,
-      especialidad: selectedSpecialty === "Todas" ? "" : selectedSpecialty,
-    });
-  }, [query, selectedSpecialty, onServerFilterChange]);
-
-  useEffect(() => {
-    setFavoriteIds(new Set(accountFavoritesKey.split(",").filter(Boolean)));
-  }, [accountUserId, accountFavoritesKey]);
 
   useEffect(() => {
     if (!showComparison) return undefined;
@@ -111,10 +100,9 @@ export default function DoctorDirectory({
             <section className="feed-rail-profile">
               <div className="feed-rail-profile__cover">
                 <span>
-                  {doctors.length}{" "}
-                  {doctors.length === 1
-                    ? "perfil verificado"
-                    : "perfiles verificados"}
+                  {loading
+                    ? "Cargando perfiles…"
+                    : `${formatCount(doctors.length, "perfil verificado", "perfiles verificados")}`}
                 </span>
               </div>
               <div className="feed-rail-profile__content">
@@ -201,14 +189,14 @@ export default function DoctorDirectory({
                     className={favoritesOnly ? "is-active" : ""}
                     onClick={() => setFavoritesOnly((current) => !current)}
                     aria-pressed={favoritesOnly}
-                    aria-label={`Mostrar perfiles guardados${auth.loading ? "" : ` (${favoriteIds.size})`}`}
+                    aria-label={`Mostrar perfiles guardados${auth.loading ? "" : ` (${savedDoctors.length})`}`}
                     title="Mostrar perfiles guardados"
                   >
                     <FiBookmark aria-hidden="true" />
                     <span className="favorite-filter__label">Guardados</span>
                     {!auth.loading && (
                       <span className="favorite-filter__count">
-                        {favoriteIds.size}
+                        {savedDoctors.length}
                       </span>
                     )}
                   </button>
@@ -290,8 +278,16 @@ export default function DoctorDirectory({
             ) : (
               <div className="empty-state feed-empty-state">
                 <FiSearch aria-hidden="true" />
-                <h3>No encontramos perfiles</h3>
-                <p>Prueba con otro nombre, especialidad o zona.</p>
+                <h3>
+                  {favoritesOnly
+                    ? "Aún no guardas perfiles"
+                    : "No encontramos perfiles"}
+                </h3>
+                <p>
+                  {favoritesOnly
+                    ? "Guarda un especialista desde su perfil para verlo aquí."
+                    : "Prueba con otro nombre, especialidad o zona."}
+                </p>
                 <button
                   className="feed-reset-button"
                   type="button"
