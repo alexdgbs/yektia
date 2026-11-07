@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
 import { Appointment } from "../models/Appointment.js";
+import { isValidId } from "../utils/validation.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
 import { User } from "../models/User.js";
 import { Doctor } from "../models/Doctor.js";
@@ -10,7 +10,6 @@ import {
 } from "../services/scheduleService.js";
 import { bookAppointment } from "../services/bookingService.js";
 
-const validId = (value) => mongoose.isValidObjectId(value);
 export const PATIENT_CANCELLATION_HOURS = 24;
 export const patientCancellationAllowed = (startsAt, now = new Date()) =>
   new Date(startsAt).getTime() - now.getTime() >=
@@ -27,7 +26,7 @@ const appointmentView = (appointment) => ({
 
 export async function listAvailability(request, response, next) {
   try {
-    if (!validId(request.params.doctorId))
+    if (!isValidId(request.params.doctorId))
       return response.status(400).json({ message: "Especialista inválido" });
     const doctor = await Doctor.findOne({
       _id: request.params.doctorId,
@@ -141,7 +140,7 @@ export async function updateMySchedule(request, response, next) {
 
 export async function createAppointment(request, response, next) {
   try {
-    if (!validId(request.body.slotId))
+    if (!isValidId(request.body.slotId))
       return response
         .status(400)
         .json({ message: "Selecciona un horario válido" });
@@ -171,13 +170,11 @@ export async function createAppointment(request, response, next) {
     if (error.status)
       return response.status(error.status).json({ message: error.message });
     if (error?.code === 11000)
-      return response
-        .status(409)
-        .json({
-          message: error?.keyPattern?.bookingKey
-            ? "Ya tienes una cita con este especialista ese día"
-            : "Ese horario ya no está disponible",
-        });
+      return response.status(409).json({
+        message: error?.keyPattern?.bookingKey
+          ? "Ya tienes una cita con este especialista ese día"
+          : "Ese horario ya no está disponible",
+      });
     if (error?.code === 20)
       return response
         .status(503)
@@ -216,7 +213,7 @@ export async function listAppointments(request, response, next) {
 
 export async function updateAppointment(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
     const professionalChange = ["confirmed", "completed"].includes(
       request.body.status,
@@ -273,11 +270,9 @@ export async function updateAppointment(request, response, next) {
       if (request.body.status === "cancelled") {
         const treatingDoctor =
           request.user.role === "doctor" &&
-          current.doctor?._id.toString() ===
-            request.user.doctor?.toString();
+          current.doctor?._id.toString() === request.user.doctor?.toString();
         const doctorRemoved =
-          !current.doctor ||
-          current.doctor.verificationStatus === "removed";
+          !current.doctor || current.doctor.verificationStatus === "removed";
         if (
           !treatingDoctor &&
           !doctorRemoved &&

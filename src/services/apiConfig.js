@@ -22,7 +22,8 @@ async function parseResponse(response) {
   if (contentType.includes("application/json")) {
     try {
       return await response.json();
-    } catch {
+    } catch (error) {
+      console.warn("La respuesta no era JSON válido.", error);
       return null;
     }
   }
@@ -55,8 +56,10 @@ export async function apiRequest(path, options = {}) {
       headers,
       credentials: "include",
     });
-  } catch {
-    throw new Error("No fue posible conectar con Yektia. Intenta de nuevo.");
+  } catch (error) {
+    throw new Error("No fue posible conectar con Yektia. Intenta de nuevo.", {
+      cause: error,
+    });
   }
 
   const body = await parseResponse(response);

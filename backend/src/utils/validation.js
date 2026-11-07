@@ -1,14 +1,24 @@
+import mongoose from "mongoose";
+
+export const isValidId = (id) => mongoose.isValidObjectId(id);
+
+export const cleanText = (value, max = 160) =>
+  typeof value === "string" ? value.trim().slice(0, max) : "";
+
+export function parseLimit(input, fallback = 50) {
+  const parsed = Number.parseInt(input, 10);
+  return Number.isFinite(parsed)
+    ? Math.min(Math.max(parsed, 1), 100)
+    : fallback;
+}
+
 export function parseDoctorQuery(input = {}) {
   const specialty =
     typeof input.especialidad === "string"
       ? input.especialidad.trim().slice(0, 60)
       : "";
   const search = typeof input.q === "string" ? input.q.trim().slice(0, 80) : "";
-  const parsedLimit = Number.parseInt(input.limit, 10);
-  const limit = Number.isFinite(parsedLimit)
-    ? Math.min(Math.max(parsedLimit, 1), 100)
-    : 50;
-  return { specialty, search, limit };
+  return { specialty, search, limit: parseLimit(input.limit) };
 }
 
 export function validateRating(input = {}) {

@@ -60,7 +60,9 @@ function Dashboard({ auth, onNavigate }) {
         socket.on("cita_actualizada", load);
         socket.on("solicitud_medica_actualizada", auth.refresh);
       })
-      .catch(() => {});
+      .catch((error) => {
+        console.error("No se pudo conectar el socket de la cuenta.", error);
+      });
 
     return () => {
       active = false;

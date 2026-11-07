@@ -1,13 +1,16 @@
-import mongoose from "mongoose";
 import { Doctor } from "../models/Doctor.js";
 import { Appointment } from "../models/Appointment.js";
 import {
+  cleanText,
+  isValidId,
   parseDoctorQuery,
+  parseLimit,
   validateComment,
   validateRating,
 } from "../utils/validation.js";
+import { MAX_CONSULTATION_PRICE } from "../utils/constants.js";
+import { matchesDoctorQuery } from "../utils/search.js";
 
-const validId = (id) => mongoose.isValidObjectId(id);
 const MAX_EMBEDDED_REVIEWS = 1000;
 const canReview = (patient, doctor) =>
   Appointment.exists({ patient, doctor, status: "completed" });
@@ -19,7 +22,7 @@ const commentView = (comment, viewerUserId = "") => ({
   isMine: Boolean(viewerUserId && comment.userId === viewerUserId.toString()),
 });
 async function ownedComment(request, response, action) {
-  if (!validId(request.params.id) || !validId(request.params.commentId)) {
+  if (!isValidId(request.params.id) || !isValidId(request.params.commentId)) {
     response.status(400).json({ message: "Identificador inválido" });
     return null;
   }
@@ -43,27 +46,11 @@ async function ownedComment(request, response, action) {
 }
 export const parseConsultationPrice = (value) => {
   const price = Number(value);
-  return Number.isInteger(price) && price >= 0 && price <= 100000
+  return Number.isInteger(price) &&
+    price >= 0 &&
+    price <= MAX_CONSULTATION_PRICE
     ? price
     : null;
-};
-
-// Sin tildes y en minúsculas, para comparar texto sin importar acentos.
-const normalizeText = (value = "") =>
-  value
-    .toLocaleLowerCase("es")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-// Cada palabra buscada debe coincidir con el inicio de una palabra del
-// perfil: "ana" encuentra a Ana, pero no a Mariana.
-const matchesSearch = (doctor, search) => {
-  const words = normalizeText(search).split(/\s+/).filter(Boolean);
-  if (!words.length) return true;
-  const haystack = normalizeText(
-    `${doctor.nombre || ""} ${doctor.especialidad || ""} ${doctor.ubicacion || ""}`,
-  ).split(/\s+/);
-  return words.every((word) => haystack.some((item) => item.startsWith(word)));
 };
 
 export async function listDoctors(_request, response, next) {
@@ -75,7 +62,7 @@ export async function listDoctors(_request, response, next) {
     response.set("Cache-Control", "private, max-age=30");
     response.json(
       doctors
-        .filter((doctor) => matchesSearch(doctor, search))
+        .filter((doctor) => matchesDoctorQuery(doctor, search))
         .map((doctor) => doctor.toPublicJSON(_request.user?.id)),
     );
   } catch (error) {
@@ -85,7 +72,7 @@ export async function listDoctors(_request, response, next) {
 
 export async function getDoctor(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response
         .status(400)
         .json({ message: "Identificador inválido", requestId: request.id });
@@ -110,7 +97,7 @@ export async function rateDoctor(request, response, next) {
       userId,
       stars: estrellas,
     } = validateRating({ ...request.body, userId: request.user.id });
-    if (!validId(id))
+    if (!isValidId(id))
       return response.status(400).json({ message: "Identificador inválido" });
     if (!valid)
       return response
@@ -155,7 +142,7 @@ export async function rateDoctor(request, response, next) {
 
 export async function removeRating(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
     const doctor = await Doctor.findById(request.params.id);
     if (!doctor)
@@ -183,16 +170,14 @@ export async function updateMyDoctorProfile(request, response, next) {
     const price = parseConsultationPrice(request.body.price);
     if (price === null)
       return response.status(400).json({ message: "Escribe un precio válido" });
-    const clean = (value, limit) =>
-      typeof value === "string" ? value.trim().slice(0, limit) : "";
     const update = {
       precio: String(price),
-      descripcion: clean(request.body.description, 500),
-      telefono: clean(request.body.phone, 30),
-      ubicacion: clean(request.body.location, 160),
+      descripcion: cleanText(request.body.description, 500),
+      telefono: cleanText(request.body.phone, 30),
+      ubicacion: cleanText(request.body.location, 160),
       idiomas: Array.isArray(request.body.languages)
         ? request.body.languages
-            .map((item) => clean(item, 40))
+            .map((item) => cleanText(item, 40))
             .filter(Boolean)
             .slice(0, 8)
         : [],
@@ -232,7 +217,7 @@ export async function addComment(request, response, next) {
       userId: request.user.id,
       nombre: request.user.nombre,
     });
-    if (!validId(id))
+    if (!isValidId(id))
       return response.status(400).json({ message: "Identificador inválido" });
     if (!valid)
       return response
@@ -325,17 +310,14 @@ export async function deleteComment(request, response, next) {
 
 export async function listComments(request, response, next) {
   try {
-    if (!validId(request.params.id))
+    if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
     const doctor = await Doctor.findById(request.params.id).select(
       "comentarios",
     );
     if (!doctor)
       return response.status(404).json({ message: "Médico no encontrado" });
-    const requestedLimit = Number.parseInt(request.query.limit, 10);
-    const limit = Number.isFinite(requestedLimit)
-      ? Math.min(Math.max(requestedLimit, 1), 100)
-      : 50;
+    const limit = parseLimit(request.query.limit);
     return response.json(
       doctor.comentarios
         .slice(-limit)

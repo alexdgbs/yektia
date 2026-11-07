@@ -94,7 +94,7 @@ export async function requireAuth(request, response, next) {
     request.session = session;
     if (Date.now() - session.lastSeenAt.getTime() > 5 * 60_000)
       Session.updateOne({ _id: session._id }, { lastSeenAt: new Date() }).catch(
-        () => {},
+        (error) => console.error("No se pudo actualizar lastSeenAt.", error),
       );
     return next();
   } catch {

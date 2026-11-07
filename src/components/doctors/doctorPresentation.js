@@ -1,3 +1,15 @@
+import { formatDate } from "../../utils/dates";
+
+export { formatDate };
+
+// Primer nombre sin el título: "Dra. Ana Sofía" -> "Ana".
+export function doctorFirstName(name = "") {
+  return name
+    .replace(/^(Dra?\.)\s/, "")
+    .split(" ")
+    .filter(Boolean)[0];
+}
+
 export function doctorInitials(name) {
   return name
     .replace(/^(Dra?\.)\s/, "")
@@ -31,14 +43,6 @@ export function doctorPrice(doctor, fallback = "Por confirmar") {
     currency: "MXN",
     maximumFractionDigits: 0,
   }).format(price);
-}
-
-export function formatDate(value, fallback = "") {
-  if (!value) return fallback;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? fallback
-    : new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(date);
 }
 
 // Sin tildes y en minúsculas, para comparar texto sin importar acentos.

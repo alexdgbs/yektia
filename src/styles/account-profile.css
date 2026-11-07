@@ -302,9 +302,7 @@
   margin-top: 2px;
 }
 
-/* El botón de "Información pública" va a todo el ancho del formulario,
-   igual que "Guardar agenda": en una sola celda del grid de 2 columnas
-   quedaba casi cuadrado y el radio 999px lo volvía un círculo. */
+/* "Guardar perfil" a todo el ancho, como "Guardar agenda". */
 .settings-grid.professional-settings > .primary-button {
   grid-column: 1 / -1;
   width: 100%;
@@ -1003,6 +1001,11 @@
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--panel);
+}
+.selected-date__date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .selected-date > header {

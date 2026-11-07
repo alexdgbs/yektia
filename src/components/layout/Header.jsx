@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FiLogOut, FiMenu, FiMoon, FiSearch, FiSun, FiX } from "react-icons/fi";
-import { doctorInitials } from "../doctors/doctorPresentation";
+import { doctorFirstName, doctorInitials } from "../doctors/doctorPresentation";
 
 const THEME_COLORS = {
   dark: "#121a1e",
@@ -32,7 +32,7 @@ export default function Header({
   const [menuOpen, setMenuOpen] = useState(false);
   const themeTransitionTimeout = useRef(null);
   const isDark = theme === "dark";
-  const firstName = user?.nombre?.trim().split(/\s+/)[0] || "Mi cuenta";
+  const firstName = doctorFirstName(user?.nombre || "") || "Mi cuenta";
 
   useLayoutEffect(() => {
     document.documentElement.dataset.theme = theme;

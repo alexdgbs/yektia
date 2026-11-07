@@ -94,7 +94,7 @@ export function createApp({ frontendUrls, io }) {
     console.error(request.id, error);
     if (error?.type === "entity.too.large")
       return response.status(413).json({
-        message: "El archivo supera el límite de 5 MB",
+        message: "La solicitud supera el límite de 32 KB",
         requestId: request.id,
       });
     return response

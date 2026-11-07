@@ -35,8 +35,7 @@ export default function AppointmentList({
         <div className="appointments-list__items">
           {items.map((item) => {
             const isPast = new Date(item.slot?.startsAt).getTime() < Date.now();
-            // Una cita pasada ya no está "Confirmada": se muestra como
-            // pasada y ya no se puede cancelar.
+            // Una cita pasada se muestra como pasada, no "Confirmada".
             const displayStatus =
               isPast && ["pending", "confirmed"].includes(item.status)
                 ? "past"

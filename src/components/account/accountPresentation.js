@@ -1,8 +1,6 @@
-export const date = (value) =>
-  new Intl.DateTimeFormat("es-MX", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+import { formatDateTime as date } from "../../utils/dates";
+
+export { date };
 export const APPOINTMENT = {
   pending: "Pendiente",
   confirmed: "Confirmada",

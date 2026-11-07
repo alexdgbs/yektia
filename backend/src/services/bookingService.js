@@ -3,16 +3,21 @@ import { Appointment } from "../models/Appointment.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
 import { Doctor } from "../models/Doctor.js";
 import { containsUnsafeControlCharacters } from "../utils/validation.js";
+import { MEXICO_CITY_OFFSET_MINUTES } from "../utils/constants.js";
+import { dateKeyAtOffset } from "../utils/dates.js";
 
 const reject = (status, message) => {
   throw Object.assign(new Error(message), { status });
 };
 
-export const appointmentDayKey = (startsAt, timezoneOffset = -360) =>
-  new Date(new Date(startsAt).getTime() + timezoneOffset * 60000)
-    .toISOString()
-    .slice(0, 10);
-export const appointmentDayBounds = (dayKey, timezoneOffset = -360) => {
+export const appointmentDayKey = (
+  startsAt,
+  timezoneOffset = MEXICO_CITY_OFFSET_MINUTES,
+) => dateKeyAtOffset(startsAt, timezoneOffset);
+export const appointmentDayBounds = (
+  dayKey,
+  timezoneOffset = MEXICO_CITY_OFFSET_MINUTES,
+) => {
   const startsAt = new Date(
     new Date(dayKey).getTime() - timezoneOffset * 60000,
   );
@@ -32,7 +37,7 @@ export async function bookAppointment(user, input) {
     const doctor = await Doctor.findById(slot.doctor)
       .select("timezoneOffset")
       .session(session);
-    const offset = doctor?.timezoneOffset ?? -360;
+    const offset = doctor?.timezoneOffset ?? MEXICO_CITY_OFFSET_MINUTES;
     const dayKey = appointmentDayKey(slot.startsAt, offset);
     const { startsAt, endsAt } = appointmentDayBounds(dayKey, offset);
     const bookingKey = `${user._id}:${slot.doctor}:${dayKey}`;

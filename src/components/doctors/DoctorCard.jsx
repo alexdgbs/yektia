@@ -24,7 +24,7 @@ export default function DoctorCard({
   const [imageFailed, setImageFailed] = useState(false);
   const initials = doctorInitials(doctor.nombre);
   const { count: ratingCount, average } = doctorRating(doctor);
-  const formattedPrice = doctorPrice(doctor, "Precio por confirmar");
+  const formattedPrice = doctorPrice(doctor);
   const pricePending = doctor.precio === "" || doctor.precio == null;
   const verified = doctor.verificationStatus === "verified";
 
@@ -66,7 +66,7 @@ export default function DoctorCard({
             onClick={() => onSelect(doctor)}
           >
             {doctor.nombre}
-            {verified && <FiCheck aria-label="Verificado" />}
+            {verified && <FiCheck role="img" aria-label="Verificado" />}
           </button>
           <p>{doctor.especialidad || "Especialista"}</p>
           <span className="feed-post__location">
@@ -107,7 +107,6 @@ export default function DoctorCard({
 
       <div className="feed-post__actions">
         <button
-          className="feed-post__action"
           type="button"
           onClick={() => onSelect(doctor, { openCalendar: true })}
         >
@@ -115,7 +114,7 @@ export default function DoctorCard({
           Disponibilidad
         </button>
         <button
-          className={`feed-post__action ${isCompared ? "is-active" : ""}`}
+          className={isCompared ? "is-active" : undefined}
           type="button"
           onClick={() => onCompare(doctor)}
           aria-pressed={isCompared}

@@ -45,7 +45,9 @@ export default function AdminDashboard() {
         socket = connected;
         socket.on("solicitud_medica_actualizada", load);
       })
-      .catch(() => {});
+      .catch((error) => {
+        console.error("No se pudo conectar el socket del panel.", error);
+      });
     return () => {
       active = false;
       socket?.disconnect();

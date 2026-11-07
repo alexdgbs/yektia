@@ -69,7 +69,8 @@ export default function App() {
     setDoctorLookup("pending");
     doctorsState
       .getDoctor(selectedDoctorId)
-      .finally(() => setDoctorLookup("done"));
+      .then(() => setDoctorLookup("done"))
+      .catch(() => setDoctorLookup("error"));
   }, [selectedDoctorId, selectedDoctor, doctorsState, doctorLookup]);
 
   const doctorNotFound =
@@ -77,6 +78,9 @@ export default function App() {
     !doctorsState.loading &&
     !selectedDoctor &&
     doctorLookup === "done";
+
+  const doctorLoadFailed =
+    Boolean(selectedDoctorId) && !selectedDoctor && doctorLookup === "error";
 
   const openDoctor = (doctor, options = {}) => {
     const openCalendar = options.openCalendar === true;
@@ -113,6 +117,14 @@ export default function App() {
           <AnimatePresence mode="wait">
             {showingAccount ? (
               <AccountPage key="account" auth={auth} onNavigate={navigateTo} />
+            ) : doctorLoadFailed ? (
+              <NotFoundPage
+                key="load-error"
+                code="ERROR DE CONEXIÓN"
+                title="No se pudo cargar el perfil"
+                message="Revisa tu conexión e inténtalo de nuevo."
+                onBack={closeDoctor}
+              />
             ) : doctorNotFound ? (
               <NotFoundPage key="not-found" onBack={closeDoctor} />
             ) : !showingDirectory && !selectedDoctorId ? (
@@ -134,21 +146,24 @@ export default function App() {
       </div>
 
       <AnimatePresence>
-        {!showingAccount && selectedDoctorId && !doctorNotFound && (
-          <DoctorPage
-            key={selectedDoctorId}
-            doctor={selectedDoctor}
-            loading={doctorsState.loading || doctorLookup === "pending"}
-            initialCalendarOpen={openCalendarOnProfile}
-            onBack={closeDoctor}
-            onRate={doctorsState.rateDoctor}
-            onComment={doctorsState.addComment}
-            onUpdateComment={doctorsState.updateComment}
-            onDeleteComment={doctorsState.deleteComment}
-            auth={auth}
-            onNavigate={navigateTo}
-          />
-        )}
+        {!showingAccount &&
+          selectedDoctorId &&
+          !doctorNotFound &&
+          !doctorLoadFailed && (
+            <DoctorPage
+              key={selectedDoctorId}
+              doctor={selectedDoctor}
+              loading={doctorsState.loading || doctorLookup === "pending"}
+              initialCalendarOpen={openCalendarOnProfile}
+              onBack={closeDoctor}
+              onRate={doctorsState.rateDoctor}
+              onComment={doctorsState.addComment}
+              onUpdateComment={doctorsState.updateComment}
+              onDeleteComment={doctorsState.deleteComment}
+              auth={auth}
+              onNavigate={navigateTo}
+            />
+          )}
       </AnimatePresence>
     </div>
   );

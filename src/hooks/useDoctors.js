@@ -2,14 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { doctorsApi } from "../services/doctorsApi";
 import { SOCKET_URL } from "../services/apiConfig";
 import { connectPublicSocket } from "../services/socketClient";
+import { doctorRating } from "../components/doctors/doctorPresentation";
 
 const normalizeDoctor = (doctor) => {
-  const ratingCount = Math.max(0, Number(doctor.ratingCount) || 0);
-  return {
-    ...doctor,
-    ratingCount,
-    promedio: ratingCount ? Number(doctor.promedio) || 0 : 0,
-  };
+  const { count, average } = doctorRating(doctor);
+  return { ...doctor, ratingCount: count, promedio: average };
 };
 
 export function useDoctors() {
@@ -17,9 +14,8 @@ export function useDoctors() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // El directorio completo se carga una vez; los filtros (búsqueda,
-  // especialidad, guardados) se aplican en el cliente, así la lista de
-  // especialidades y el total no cambian al filtrar.
+  // El directorio completo se carga una vez; los filtros se aplican en el
+  // cliente, así la lista de especialidades y el total no cambian al filtrar.
   const loadDoctors = useCallback(async () => {
     try {
       const data = await doctorsApi.list();
@@ -41,22 +37,26 @@ export function useDoctors() {
     loadDoctors();
   }, [loadDoctors]);
 
+  // Solo un 404 significa que el perfil no existe; cualquier otro error
+  // (sin red, API caída) se propaga para mostrar el estado de error.
   const getDoctor = useCallback(async (doctorId) => {
+    let data;
     try {
-      const data = await doctorsApi.get(doctorId);
-      if (!data?._id) return null;
-      const normalized = normalizeDoctor(data);
-      setDoctors((current) =>
-        current.some((doctor) => doctor._id === normalized._id)
-          ? current.map((doctor) =>
-              doctor._id === normalized._id ? normalized : doctor,
-            )
-          : [...current, normalized],
-      );
-      return normalized;
-    } catch {
-      return null;
+      data = await doctorsApi.get(doctorId);
+    } catch (error) {
+      if (error?.status === 404) return null;
+      throw error;
     }
+    if (!data?._id) return null;
+    const normalized = normalizeDoctor(data);
+    setDoctors((current) =>
+      current.some((doctor) => doctor._id === normalized._id)
+        ? current.map((doctor) =>
+            doctor._id === normalized._id ? normalized : doctor,
+          )
+        : [...current, normalized],
+    );
+    return normalized;
   }, []);
 
   useEffect(() => {
