@@ -413,7 +413,9 @@ export function DoctorVerificationStatus() {
     accountApi
       .myMedicalApplication()
       .then(({ application: current }) => setApplication(current))
-      .catch(() => {});
+      .catch((error) => {
+        console.error("No se pudo cargar la solicitud médica.", error);
+      });
   }, []);
   return application?.status === "approved" ? (
     <ApplicationDecision application={application} />
