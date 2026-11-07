@@ -9,8 +9,11 @@ valoraciones y agendas en tiempo real.
 
 - `src/`: frontend (páginas, componentes, servicios REST y Socket.IO).
 - `backend/`: API REST, Socket.IO y modelos de MongoDB.
-- `.github/workflows/quality.yml`: valida ESLint y el build del frontend, y
-  corre los tests del backend (`npm test` en `backend/`).
+- `.github/workflows/quality.yml`: valida ESLint y el build del frontend.
+  Los tests del backend se corren en local con `npm test` en `backend/`; el
+  job de CI para ellos está listo en `docs/backend-tests-workflow.yml` y hay
+  que añadirlo a mano, porque la integración de GitHub no puede escribir
+  archivos en `.github/workflows/`.
 
 ## Frontend
 

@@ -305,7 +305,7 @@ export default function DoctorProfile({
             <img
               className="profile-portrait__image"
               src={doctor.imagen}
-              alt={`Retrato de ${doctor.nombre}`}
+              alt=""
               loading="lazy"
               onError={() => setImageFailed(true)}
             />

@@ -66,7 +66,7 @@ export default function DoctorCard({
             onClick={() => onSelect(doctor)}
           >
             {doctor.nombre}
-            {verified && <FiCheck aria-label="Verificado" />}
+            {verified && <FiCheck role="img" aria-label="Verificado" />}
           </button>
           <p>{doctor.especialidad || "Especialista"}</p>
           <span className="feed-post__location">
