@@ -309,7 +309,7 @@ export default function DoctorDirectory({
             aria-label="Especialistas sugeridos y criterios de atención"
           >
             {suggestions.length >= 2 && (
-              <section className="feed-rail-card feed-suggest-card">
+              <section className="feed-rail-card">
                 <header>
                   <h3>Otros especialistas</h3>
                 </header>
@@ -458,7 +458,7 @@ export default function DoctorDirectory({
                   const price = doctorPrice(doctor);
                   return (
                     <div className="comparison-column" key={doctor._id}>
-                      <span className="comparison-doctor">
+                      <span>
                         <strong>{doctor.nombre}</strong>
                         <small>{doctor.especialidad}</small>
                       </span>

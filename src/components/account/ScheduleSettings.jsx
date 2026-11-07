@@ -145,7 +145,7 @@ export default function ScheduleSettings() {
           </select>
         </label>
         <div className="schedule-rules">
-          <div className="schedule-rule schedule-rule--single">
+          <div className="schedule-rule">
             <label>
               De
               <select

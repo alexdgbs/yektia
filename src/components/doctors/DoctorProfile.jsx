@@ -508,7 +508,7 @@ export default function DoctorProfile({
                 <span>Agenda de consulta</span>
               </div>
               <button
-                className="icon-close appointment-close"
+                className="appointment-close"
                 type="button"
                 aria-label="Cerrar horarios"
                 title="Cerrar horarios"
@@ -560,7 +560,7 @@ export default function DoctorProfile({
                     <p>Califica del 1 al 5 y deja un comentario.</p>
                   </div>
                   <button
-                    className="icon-close review-composer__close"
+                    className="review-composer__close"
                     type="button"
                     aria-label="Cerrar formulario de opinión"
                     title="Cerrar formulario"

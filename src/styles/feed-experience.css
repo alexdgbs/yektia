@@ -380,13 +380,6 @@
   white-space: nowrap;
 }
 
-.feed-suggest-empty {
-  margin: 12px 14px;
-  color: var(--muted);
-  font-size: var(--text-meta);
-  line-height: 1.55;
-}
-
 .feed-trust-card > ul {
   display: grid;
   gap: 0;
@@ -964,29 +957,6 @@
 .doctor-modal__loading {
   width: min(calc(100% - 32px), 820px);
   margin: 22px auto;
-}
-
-.doctor-modal__empty {
-  display: grid;
-  justify-items: center;
-  gap: 12px;
-  padding: clamp(35px, 7vw, 72px) 24px;
-  text-align: center;
-}
-
-.doctor-modal__empty h1 {
-  max-width: 550px;
-  margin: 0;
-  font-size: clamp(24px, 4vw, 36px);
-  letter-spacing: -0.045em;
-}
-
-.doctor-modal__empty p {
-  max-width: 460px;
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: var(--text-body);
-  line-height: 1.6;
 }
 
 .profile-card.profile-card--profile {

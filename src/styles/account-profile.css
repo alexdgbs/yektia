@@ -1004,6 +1004,11 @@
   border-radius: 18px;
   background: var(--panel);
 }
+.selected-date__date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
 .selected-date > header {
   display: grid;
