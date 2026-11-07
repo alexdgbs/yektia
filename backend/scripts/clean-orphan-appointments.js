@@ -1,13 +1,5 @@
-// Citas huérfanas: citas cuyo médico ya no existe o cuyo perfil fue
-// retirado del directorio (verificationStatus "removed"). El paciente las
-// sigue viendo como "Profesional retirado" sin poder hacer nada con ellas.
-//
-// Uso (con MONGO_URI en backend/.env):
-//   cd backend
-//   npm run clean:orphans            # solo lista las huérfanas
-//   npm run clean:orphans -- --borrar  # las borra junto con su hueco
-//
-// Sin --borrar no se borra nada.
+// Citas huérfanas: citas cuyo médico ya no existe o fue retirado.
+// Uso: npm run clean:orphans (solo lista) o con -- --borrar (las borra).
 import "dotenv/config";
 import mongoose from "mongoose";
 import { Appointment } from "../src/models/Appointment.js";

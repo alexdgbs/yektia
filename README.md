@@ -110,12 +110,12 @@ cd backend
 npm run seed:doctors
 ```
 
-El script está en `backend/scripts/seed-doctors.js`. No borra nada: solo
-agrega los doctores de ejemplo que aún no existan (por cédula) y deja
-intactos los perfiles que ya están en la base. Los doctores llevan
-`fuente: "ejemplo"` para distinguirlos de los perfiles reales. El sitio en
-vivo seguirá mostrando los perfiles que ya tiene hasta que se corra este
-seed contra su base de MongoDB.
+El script está en `backend/scripts/seed-doctors.js`. No borra nada:
+actualiza por nombre a los doctores de ejemplo que ya existan (también
+cambia sus cédulas y teléfonos por los nuevos, no secuenciales) y crea a
+los que falten. Los doctores llevan `fuente: "ejemplo"` para distinguirlos
+de los perfiles reales. El sitio en vivo seguirá mostrando los perfiles
+que ya tiene hasta que se corra este seed contra su base de MongoDB.
 
 El mismo seed completa el perfil de Mariana Torres (cédula 006210025) si ya
 existe: descripción, precio $600 MXN, idiomas Español e Inglés, ubicación y

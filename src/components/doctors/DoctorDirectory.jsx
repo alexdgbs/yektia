@@ -32,8 +32,8 @@ export default function DoctorDirectory({
   const [showComparison, setShowComparison] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState("Todas");
-  // Los favoritos se leen directo de la cuenta, no de un estado aparte:
-  // así el contador y el filtro nunca se desincronizan.
+  // Los favoritos se leen directo de la cuenta, para que el contador y
+  // el filtro nunca se desincronicen.
   const favoriteIds = useMemo(
     () => new Set((auth.user?.favoriteDoctorIds || []).map(String)),
     [auth.user],

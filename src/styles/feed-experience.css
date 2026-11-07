@@ -106,8 +106,7 @@
   line-height: 1.3;
 }
 
-/* Todas las especialidades visibles en varias filas, sin scroll
-   horizontal escondido. */
+/* Especialidades en varias filas, sin scroll horizontal escondido. */
 .feed-categories {
   display: flex;
   flex-wrap: wrap;
