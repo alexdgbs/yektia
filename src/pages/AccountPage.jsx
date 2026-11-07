@@ -13,7 +13,7 @@ import MedicalApplicationPanel, {
   DoctorVerificationStatus,
 } from "../components/account/MedicalApplicationPanel";
 
-function Dashboard({ auth }) {
+function Dashboard({ auth, onNavigate }) {
   const isAdmin = auth.user.role === "admin";
   const [loading, setLoading] = useState(!isAdmin);
   const [appointments, setAppointments] = useState({
@@ -110,7 +110,24 @@ function Dashboard({ auth }) {
             <strong>{auth.user.email}</strong>
           </div>
           {!isAdmin && (
-            <a className="primary-button" href="/#directorio">
+            <a
+              className="primary-button"
+              href="/#directorio"
+              onClick={(event) => {
+                event.preventDefault();
+                onNavigate?.("/");
+                window.requestAnimationFrame(() => {
+                  document.getElementById("directorio")?.scrollIntoView({
+                    behavior: window.matchMedia(
+                      "(prefers-reduced-motion: reduce)",
+                    ).matches
+                      ? "auto"
+                      : "smooth",
+                    block: "start",
+                  });
+                });
+              }}
+            >
               Buscar especialista
             </a>
           )}
@@ -181,7 +198,7 @@ function Dashboard({ auth }) {
   );
 }
 
-export default function AccountPage({ auth }) {
+export default function AccountPage({ auth, onNavigate }) {
   if (auth.loading) {
     return (
       <div className="page-width">
@@ -190,5 +207,5 @@ export default function AccountPage({ auth }) {
     );
   }
 
-  return auth.user ? <Dashboard auth={auth} /> : <AuthForm auth={auth} />;
+  return auth.user ? <Dashboard auth={auth} onNavigate={onNavigate} /> : <AuthForm auth={auth} />;
 }

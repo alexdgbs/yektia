@@ -22,3 +22,11 @@ export function doctorPrice(doctor, fallback = "Por confirmar") {
     maximumFractionDigits: 0,
   }).format(price);
 }
+
+export function formatDate(value, fallback = "") {
+  if (!value) return fallback;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? fallback
+    : new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(date);
+}

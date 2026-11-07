@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { accountApi } from "../services/accountApi";
 
+export function getAccountKey(user) {
+  return user
+    ? String(user.email || user.id || user._id || "authenticated")
+    : "";
+}
+
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);

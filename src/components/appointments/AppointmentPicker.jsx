@@ -69,7 +69,7 @@ const getMonthCells = (month) => {
   return cells;
 };
 
-export default function AppointmentPicker({ doctor, auth }) {
+export default function AppointmentPicker({ doctor, auth, onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState([]);
   const [selectedDay, setSelectedDay] = useState("");
@@ -177,8 +177,8 @@ export default function AppointmentPicker({ doctor, auth }) {
   );
   const hasNextMonth = Boolean(
     activeMonth &&
-      maxMonth &&
-      monthIndex(activeMonth) + monthPanelCount <= monthIndex(maxMonth),
+    maxMonth &&
+    monthIndex(activeMonth) + monthPanelCount <= monthIndex(maxMonth),
   );
   const selectedSlotIsAvailable = selectedDaySlots.some(
     (slot) => slot._id === selected && slot.status === "open",
@@ -190,8 +190,7 @@ export default function AppointmentPicker({ doctor, auth }) {
 
   const requestAppointment = async () => {
     if (!auth.user) {
-      window.history.pushState({}, "", "/cuenta");
-      window.dispatchEvent(new PopStateEvent("popstate"));
+      onNavigate?.("/cuenta");
       return;
     }
     if (auth.user.role === "admin") {
@@ -232,7 +231,10 @@ export default function AppointmentPicker({ doctor, auth }) {
       </span>
 
       {loading ? (
-        <LoadingSkeleton variant="slots" label="Cargando horarios disponibles" />
+        <LoadingSkeleton
+          variant="slots"
+          label="Cargando horarios disponibles"
+        />
       ) : availabilityError && !slots.length ? (
         <p className="appointment-message" role="alert">
           {availabilityError}
@@ -240,7 +242,10 @@ export default function AppointmentPicker({ doctor, auth }) {
       ) : slots.length ? (
         <>
           {activeDay ? (
-            <section className="selected-date" aria-label="Horarios disponibles">
+            <section
+              className="selected-date"
+              aria-label="Horarios disponibles"
+            >
               <header className="selected-date__heading">
                 <button
                   className="appointment-back"
@@ -298,9 +303,13 @@ export default function AppointmentPicker({ doctor, auth }) {
                     onClick={requestAppointment}
                     disabled={!activeSlot}
                   >
-                    {auth.user ? "Solicitar cita" : "Inicia sesión para agendar"}
+                    {auth.user
+                      ? "Solicitar cita"
+                      : "Inicia sesión para agendar"}
                   </button>
-                  {!activeSlot && <small>Elige un horario para continuar.</small>}
+                  {!activeSlot && (
+                    <small>Elige un horario para continuar.</small>
+                  )}
                 </div>
               ) : (
                 <p className="appointment-message">
@@ -313,109 +322,112 @@ export default function AppointmentPicker({ doctor, auth }) {
               className="appointment-calendar"
               aria-label="Selecciona una fecha"
             >
-            <div className="appointment-calendar__toolbar">
-              <div>
-                <span className="eyebrow">Disponibilidad</span>
-                <h3>Elige un día</h3>
+              <div className="appointment-calendar__toolbar">
+                <div>
+                  <span className="eyebrow">Disponibilidad</span>
+                  <h3>Elige un día</h3>
+                </div>
+                <div className="appointment-calendar__navigation">
+                  <button
+                    type="button"
+                    onClick={() => setViewMonth(shiftMonth(activeMonth, -1))}
+                    disabled={
+                      !activeMonth || !firstMonth || activeMonth <= firstMonth
+                    }
+                    aria-label="Ver meses anteriores"
+                  >
+                    <FiChevronLeft aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMonth(shiftMonth(activeMonth, 1))}
+                    disabled={!hasNextMonth}
+                    aria-label="Ver meses siguientes"
+                  >
+                    <FiChevronRight aria-hidden="true" />
+                  </button>
+                </div>
               </div>
-              <div className="appointment-calendar__navigation">
-                <button
-                  type="button"
-                  onClick={() => setViewMonth(shiftMonth(activeMonth, -1))}
-                  disabled={!activeMonth || !firstMonth || activeMonth <= firstMonth}
-                  aria-label="Ver meses anteriores"
-                >
-                  <FiChevronLeft aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMonth(shiftMonth(activeMonth, 1))}
-                  disabled={!hasNextMonth}
-                  aria-label="Ver meses siguientes"
-                >
-                  <FiChevronRight aria-hidden="true" />
-                </button>
-              </div>
-            </div>
 
-            <div
-              className={`appointment-calendar__months ${visibleMonths.length === 1 ? "is-single" : ""}`}
-            >
-              {visibleMonths.map((month) => (
-                <section
-                  className="appointment-month"
-                  key={month}
-                  aria-label={formatDateKey(`${month}-01`, {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                >
-                  <h4>
-                  {formatMonthTitle(month)}
-                  </h4>
-                  <div className="appointment-month__weekdays" aria-hidden="true">
-                    {WEEKDAYS.map((weekday) => (
-                      <span key={weekday}>{weekday}</span>
-                    ))}
-                  </div>
-                  <div className="appointment-month__days">
-                    {getMonthCells(month).map((day, index) => {
-                      if (!day) {
-                        return (
-                          <span
-                            className="appointment-day-empty"
-                            key={`${month}-empty-${index}`}
-                            aria-hidden="true"
-                          />
-                        );
-                      }
-                      const daySlots = slotsByDay.get(day) || [];
-                      const openCount = daySlots.filter(
-                        (slot) => slot.status === "open",
-                      ).length;
-                      const isSelected = day === activeDay;
-                      const isFull = daySlots.length > 0 && openCount === 0;
-                      return (
-                        <button
-                          className={`appointment-day ${openCount ? "is-available" : ""} ${isFull ? "is-full" : ""} ${isSelected ? "is-selected" : ""}`}
-                          type="button"
-                          key={day}
-                          disabled={!openCount}
-                          aria-pressed={isSelected}
-                          aria-label={`${formatDateKey(day, {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                          })}${openCount ? `, ${openCount} ${openCount === 1 ? "horario disponible" : "horarios disponibles"}` : isFull ? ", completo" : ", sin horarios publicados"}`}
-                          onClick={() => {
-                            setSelectedDay(day);
-                            setSelected("");
-                            setStatus("");
-                          }}
-                        >
-                          <strong>{dateFromKey(day).getUTCDate()}</strong>
-                          <small>
-                            {openCount
-                              ? `${openCount} ${openCount === 1 ? "horario" : "horarios"}`
-                              : isFull
-                                ? "Completo"
-                                : ""}
-                          </small>
-                        </button>
-                      );
+              <div
+                className={`appointment-calendar__months ${visibleMonths.length === 1 ? "is-single" : ""}`}
+              >
+                {visibleMonths.map((month) => (
+                  <section
+                    className="appointment-month"
+                    key={month}
+                    aria-label={formatDateKey(`${month}-01`, {
+                      month: "long",
+                      year: "numeric",
                     })}
-                  </div>
-                </section>
-              ))}
-            </div>
-            <div className="appointment-calendar__legend">
-              <span>
-                <i className="is-available" /> Disponible
-              </span>
-              <span>
-                <i className="is-full" /> Completo
-              </span>
-            </div>
+                  >
+                    <h4>{formatMonthTitle(month)}</h4>
+                    <div
+                      className="appointment-month__weekdays"
+                      aria-hidden="true"
+                    >
+                      {WEEKDAYS.map((weekday) => (
+                        <span key={weekday}>{weekday}</span>
+                      ))}
+                    </div>
+                    <div className="appointment-month__days">
+                      {getMonthCells(month).map((day, index) => {
+                        if (!day) {
+                          return (
+                            <span
+                              className="appointment-day-empty"
+                              key={`${month}-empty-${index}`}
+                              aria-hidden="true"
+                            />
+                          );
+                        }
+                        const daySlots = slotsByDay.get(day) || [];
+                        const openCount = daySlots.filter(
+                          (slot) => slot.status === "open",
+                        ).length;
+                        const isSelected = day === activeDay;
+                        const isFull = daySlots.length > 0 && openCount === 0;
+                        return (
+                          <button
+                            className={`appointment-day ${openCount ? "is-available" : ""} ${isFull ? "is-full" : ""} ${isSelected ? "is-selected" : ""}`}
+                            type="button"
+                            key={day}
+                            disabled={!openCount}
+                            aria-pressed={isSelected}
+                            aria-label={`${formatDateKey(day, {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "long",
+                            })}${openCount ? `, ${openCount} ${openCount === 1 ? "horario disponible" : "horarios disponibles"}` : isFull ? ", completo" : ", sin horarios publicados"}`}
+                            onClick={() => {
+                              setSelectedDay(day);
+                              setSelected("");
+                              setStatus("");
+                            }}
+                          >
+                            <strong>{dateFromKey(day).getUTCDate()}</strong>
+                            <small>
+                              {openCount
+                                ? `${openCount} ${openCount === 1 ? "horario" : "horarios"}`
+                                : isFull
+                                  ? "Completo"
+                                  : ""}
+                            </small>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </div>
+              <div className="appointment-calendar__legend">
+                <span>
+                  <i className="is-available" /> Disponible
+                </span>
+                <span>
+                  <i className="is-full" /> Completo
+                </span>
+              </div>
             </section>
           )}
           {availabilityError && (
