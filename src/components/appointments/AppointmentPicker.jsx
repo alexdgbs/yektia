@@ -4,6 +4,7 @@ import LoadingSkeleton from "../LoadingSkeleton";
 import { accountApi } from "../../services/accountApi";
 import { SOCKET_URL } from "../../services/apiConfig";
 import { connectPublicSocket } from "../../services/socketClient";
+import { formatDuration } from "../doctors/doctorPresentation";
 
 const WEEKDAYS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
 const DEFAULT_TIMEZONE_OFFSET = -360;
@@ -226,8 +227,7 @@ export default function AppointmentPicker({ doctor, auth, onNavigate }) {
   return (
     <div className="appointment-picker">
       <span className="appointment-picker__duration">
-        {doctor.appointmentDuration || 45} minutos por consulta · Horario local
-        del consultorio
+        {`${formatDuration(doctor.appointmentDuration || 45)} por consulta · Horario local del consultorio`}
       </span>
 
       {loading ? (

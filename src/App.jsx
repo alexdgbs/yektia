@@ -51,6 +51,7 @@ export default function App() {
 
   const navigateTo = useCallback((path, options = {}) => {
     const url = new URL(path, window.location.origin);
+    if (url.pathname === "/directorio") url.pathname = "/";
     if (options.replace) {
       window.history.replaceState({}, "", url.pathname + url.search + url.hash);
     } else {
@@ -96,6 +97,7 @@ export default function App() {
   }, []);
 
   const showingAccount = currentPath === "/cuenta";
+  const showingDirectory = currentPath === "/" || currentPath === "/directorio";
 
   return (
     <div className="app-shell">
@@ -113,7 +115,7 @@ export default function App() {
               <AccountPage key="account" auth={auth} onNavigate={navigateTo} />
             ) : doctorNotFound ? (
               <NotFoundPage key="not-found" onBack={closeDoctor} />
-            ) : currentPath !== "/" && !selectedDoctorId ? (
+            ) : !showingDirectory && !selectedDoctorId ? (
               <NotFoundPage key="not-found" onBack={() => navigateTo("/")} />
             ) : (
               <HomePage

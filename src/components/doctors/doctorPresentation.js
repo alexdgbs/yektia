@@ -7,6 +7,16 @@ export function doctorInitials(name) {
     .join("");
 }
 
+export function formatDuration(minutes) {
+  const value = Number(minutes) || 0;
+  return `${value} ${value === 1 ? "minuto" : "minutos"}`;
+}
+
+export function formatCount(count, singular, plural) {
+  const value = Math.max(0, Number(count) || 0);
+  return `${value} ${value === 1 ? singular : plural}`;
+}
+
 export function doctorRating(doctor) {
   const count = Math.max(0, Number(doctor.ratingCount) || 0);
   return { count, average: count ? Number(doctor.promedio) || 0 : 0 };

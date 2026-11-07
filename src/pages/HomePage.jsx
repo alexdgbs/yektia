@@ -21,6 +21,15 @@ export default function HomePage({
       exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
       transition={{ duration: reduceMotion ? 0 : 0.18 }}
     >
+      <section className="home-intro">
+        <div className="page-width">
+          <span className="eyebrow">Directorio médico</span>
+          <p>
+            Encuentra especialistas verificados, compara precios y reserva tu
+            cita.
+          </p>
+        </div>
+      </section>
       <DoctorDirectory
         doctors={doctorsState.doctors}
         loading={doctorsState.loading}

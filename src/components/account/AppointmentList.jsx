@@ -1,5 +1,6 @@
 import LoadingSkeleton from "../LoadingSkeleton";
 import { APPOINTMENT, date } from "./accountPresentation";
+import { formatCount } from "../doctors/doctorPresentation";
 
 export default function AppointmentList({
   items,
@@ -25,7 +26,7 @@ export default function AppointmentList({
           <h2>{title}</h2>
         </div>
         <span className="appointments-list__count">
-          {items.length} {items.length === 1 ? "cita" : "citas"}
+          {formatCount(items.length, "cita", "citas")}
         </span>
       </header>
 
@@ -33,6 +34,10 @@ export default function AppointmentList({
         <div className="appointments-list__items">
           {items.map((item) => {
             const active = !["cancelled", "completed"].includes(item.status);
+            const doctorRemoved =
+              !item.doctor ||
+              item.doctor.verificationStatus === "removed" ||
+              item.doctor.nombre === "Profesional retirado";
             const patientCanCancel =
               new Date(item.slot?.startsAt).getTime() - Date.now() >=
               24 * 60 * 60 * 1000;
@@ -43,17 +48,24 @@ export default function AppointmentList({
                   <strong>
                     {mode === "practice"
                       ? item.patient?.nombre
-                      : item.doctor?.nombre}
+                      : doctorRemoved
+                        ? "El profesional ya no está disponible"
+                        : item.doctor?.nombre}
                   </strong>
                   <span>
                     {mode === "practice"
                       ? item.patient?.email
-                      : item.doctor?.especialidad}
+                      : doctorRemoved
+                        ? "El perfil fue retirado del directorio."
+                        : item.doctor?.especialidad}
                   </span>
                   <time>{date(item.slot?.startsAt)}</time>
-                  {mode === "personal" && active && !patientCanCancel && (
-                    <small>Para cancelar, contacta al consultorio.</small>
-                  )}
+                  {mode === "personal" &&
+                    active &&
+                    !patientCanCancel &&
+                    !doctorRemoved && (
+                      <small>Para cancelar, contacta al consultorio.</small>
+                    )}
                 </div>
 
                 <div className="appointment-meta">
@@ -69,11 +81,14 @@ export default function AppointmentList({
                         Confirmar
                       </button>
                     )}
-                    {active && (mode === "practice" || patientCanCancel) && (
-                      <button onClick={() => onUpdate(item.id, "cancelled")}>
-                        Cancelar
-                      </button>
-                    )}
+                    {active &&
+                      (mode === "practice" ||
+                        patientCanCancel ||
+                        doctorRemoved) && (
+                        <button onClick={() => onUpdate(item.id, "cancelled")}>
+                          Cancelar
+                        </button>
+                      )}
                     {mode === "practice" && item.status === "confirmed" && (
                       <button onClick={() => onUpdate(item.id, "completed")}>
                         Completar

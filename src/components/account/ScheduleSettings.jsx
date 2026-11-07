@@ -1,6 +1,7 @@
 import LoadingSkeleton from "../LoadingSkeleton";
 import { useEffect, useState } from "react";
 import { accountApi } from "../../services/accountApi";
+import { formatDuration } from "../doctors/doctorPresentation";
 const DAYS = [
   { value: 1, label: "Lunes" },
   { value: 2, label: "Martes" },
@@ -138,7 +139,7 @@ export default function ScheduleSettings() {
           >
             {[15, 30, 45, 60, 90].map((value) => (
               <option key={value} value={value}>
-                {value} minutos
+                {formatDuration(value)}
               </option>
             ))}
           </select>

@@ -139,6 +139,17 @@
   }
 }
 
+.home-intro {
+  padding: 18px 0 4px;
+}
+
+.home-intro p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+
 .feed-discovery-card {
   display: grid;
   gap: 12px;
@@ -223,6 +234,44 @@
 .feed-categories button:hover {
   border-color: var(--line-strong);
   color: var(--ink);
+}
+
+.directory-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--muted);
+}
+
+.directory-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-caption);
+}
+
+.directory-search__clear {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
 }
 
 .care-feed-layout {
@@ -1995,6 +2044,11 @@
 @media (max-width: 560px) {
   .app-shell {
     padding: 8px;
+  }
+
+  .feed-categories {
+    flex-wrap: wrap;
+    overflow-x: visible;
   }
 
   .app-frame {

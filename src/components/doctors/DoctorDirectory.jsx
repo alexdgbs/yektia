@@ -9,7 +9,12 @@ import {
 } from "react-icons/fi";
 import LoadingSkeleton from "../LoadingSkeleton";
 import DoctorCard from "./DoctorCard";
-import { doctorPrice, doctorRating } from "./doctorPresentation";
+import {
+  doctorInitials,
+  doctorPrice,
+  doctorRating,
+  formatCount,
+} from "./doctorPresentation";
 import { getAccountKey } from "../../hooks/useAuth";
 
 export default function DoctorDirectory({
@@ -27,7 +32,9 @@ export default function DoctorDirectory({
   const [showComparison, setShowComparison] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState("Todas");
-  const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const [favoriteIds, setFavoriteIds] = useState(
+    () => new Set((auth.user?.favoriteDoctorIds || []).map(String)),
+  );
   const accountUserId = auth.user ? getAccountKey(auth.user) : null;
   const accountFavoritesKey = [...(auth.user?.favoriteDoctorIds || [])]
     .map(String)
@@ -194,16 +201,42 @@ export default function DoctorDirectory({
                     className={favoritesOnly ? "is-active" : ""}
                     onClick={() => setFavoritesOnly((current) => !current)}
                     aria-pressed={favoritesOnly}
-                    aria-label={`Mostrar perfiles guardados (${favoriteIds.size})`}
+                    aria-label={`Mostrar perfiles guardados${auth.loading ? "" : ` (${favoriteIds.size})`}`}
                     title="Mostrar perfiles guardados"
                   >
                     <FiBookmark aria-hidden="true" />
                     <span className="favorite-filter__label">Guardados</span>
-                    <span className="favorite-filter__count">
-                      {favoriteIds.size}
-                    </span>
+                    {!auth.loading && (
+                      <span className="favorite-filter__count">
+                        {favoriteIds.size}
+                      </span>
+                    )}
                   </button>
                 </div>
+              </div>
+
+              <div className="directory-search">
+                <FiSearch aria-hidden="true" />
+                <label className="sr-only" htmlFor="directory-search">
+                  Buscar especialista
+                </label>
+                <input
+                  id="directory-search"
+                  type="search"
+                  placeholder="Buscar especialista"
+                  value={query}
+                  onChange={(event) => onQueryChange(event.target.value)}
+                />
+                {query && (
+                  <button
+                    type="button"
+                    className="directory-search__clear"
+                    onClick={() => onQueryChange("")}
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <FiX aria-hidden="true" />
+                  </button>
+                )}
               </div>
 
               <nav
@@ -294,13 +327,9 @@ export default function DoctorDirectory({
                     >
                       <span className="feed-suggest-avatar" aria-hidden="true">
                         <strong>
-                          {doctor.nombre
-                            ?.trim()
-                            .split(/\s+/)
-                            .slice(0, 2)
-                            .map((part) => part[0])
-                            .join("")
-                            .toLocaleUpperCase("es") || "E"}
+                          {doctorInitials(doctor.nombre).toLocaleUpperCase(
+                            "es",
+                          ) || "E"}
                         </strong>
                         {doctor.imagen && (
                           <img
@@ -360,7 +389,7 @@ export default function DoctorDirectory({
           <div className="compare-tray" aria-live="polite">
             <div>
               <span>Comparador</span>
-              <strong>{compared.length} de 3 especialistas</strong>
+              <strong>{`${compared.length} de 3 especialistas`}</strong>
             </div>
             <div className="compare-people">
               {compared.map((doctor) => (
@@ -440,8 +469,8 @@ export default function DoctorDirectory({
                       <span>
                         {count ? (
                           <>
-                            <b>{average.toFixed(1)}</b> / 5 · {count}{" "}
-                            {count === 1 ? "valoración" : "valoraciones"}
+                            <b>{average.toFixed(1)}</b>
+                            {` / 5 · ${formatCount(count, "valoración", "valoraciones")}`}
                           </>
                         ) : (
                           "Sin valoraciones"

@@ -437,10 +437,6 @@ export default function DoctorProfile({
               <dd>{doctor.cedula || "No disponible"}</dd>
             </div>
             <div>
-              <dt>Contacto</dt>
-              <dd>{doctor.telefono || "Mediante la plataforma"}</dd>
-            </div>
-            <div>
               <dt>Idiomas</dt>
               <dd>
                 {doctor.idiomas?.length
