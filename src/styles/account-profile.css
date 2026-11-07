@@ -1,6 +1,4 @@
-/* Account and specialist profile styles.
-   Feature-owned styles live here so App.css stays focused on shared UI and
-   the directory. */
+/* Estilos de la cuenta y del perfil. */
 
 .account-auth {
   min-height: calc(100svh - 140px);
@@ -195,7 +193,6 @@
 .dashboard-grid--patient > .appointments-list {
   grid-area: appointments;
   margin-top: 0;
-  padding: 22px;
 }
 
 .settings-panel,
@@ -204,7 +201,7 @@
 .dashboard-professional-stack > .settings-panel {
   margin: 0;
   padding: 26px;
-  border: 0;
+  border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--panel);
   box-shadow: var(--shadow-card);
@@ -641,7 +638,7 @@
 .appointments-list {
   margin-top: 18px;
   padding: 26px;
-  border: 0;
+  border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--panel);
   box-shadow: var(--shadow-card);
@@ -658,7 +655,7 @@
 .appointments-list h2 {
   margin: 6px 0 0;
   color: var(--ink);
-  font-size: 24px;
+  font-size: 26px;
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
@@ -910,7 +907,7 @@
   max-width: 100%;
   overflow: hidden;
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--text-meta);
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1140,11 +1137,7 @@
 
 /* Specialist profile */
 
-/* Availability is an integrated action rail, not a floating notice. */
-
-/* Disclosure controls: every expandable surface has an explicit, tappable close action. */
-
-/* Account/profile responsive system. */
+/* Responsivo de cuenta y perfil. */
 @media (max-width: 1080px) {
   .account-auth {
     grid-template-columns: 1fr;

@@ -1,6 +1,4 @@
-/* Yektia feed experience: clean, editorial, responsive surfaces. */
-
-/* Navigation is a restrained floating capsule; glass is limited to navigation. */
+/* Estilos del inicio y del perfil. */
 
 .site-header .header-inner.page-width {
   width: calc(100% - 40px);
@@ -15,7 +13,7 @@
 }
 
 .care-feed__page {
-  width: min(1230px, calc(100% - 48px));
+  width: min(1180px, calc(100% - 56px));
 }
 
 .care-feed.has-compare-tray {
@@ -28,7 +26,7 @@
   }
 }
 
-/* Sections below the directory: same width, eyebrow and palette as the feed. */
+/* Secciones debajo del directorio. */
 .care-steps,
 .about-section {
   padding: 34px 0 10px;
@@ -36,7 +34,7 @@
 
 .care-steps__content,
 .about-section .page-width {
-  width: min(1230px, calc(100% - 48px));
+  width: min(1180px, calc(100% - 56px));
   margin: 0 auto;
 }
 
@@ -859,7 +857,6 @@
   cursor: pointer;
 }
 
-/* Loading placeholders retain the feed silhouette instead of reverting to cards. */
 .feed-post--skeleton {
   pointer-events: none;
 }
@@ -922,7 +919,6 @@
   height: 34px;
 }
 
-/* Small disclosure panels use a single, reusable entrance animation. */
 @keyframes profile-panel-in {
   from {
     opacity: 0;
@@ -934,7 +930,6 @@
   }
 }
 
-/* Specialist profile uses the same surfaces and soft accent controls as the directory. */
 .doctor-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1820,7 +1815,7 @@
   border-radius: 999px;
 }
 
-/* Responsive composition: retain a readable feed at every width. */
+/* Responsivo. */
 @media (max-width: 1120px) {
   .care-feed-layout {
     grid-template-columns: minmax(0, 1fr) minmax(220px, 0.68fr);
@@ -1959,7 +1954,7 @@
   }
 
   .profile-description {
-    font-size: 12px;
+    font-size: var(--text-small);
   }
 
   .profile-body {

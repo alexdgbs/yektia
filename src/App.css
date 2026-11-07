@@ -201,7 +201,6 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* Header: translucency is reserved for navigation and utility controls. */
 .site-header {
   position: sticky;
   top: 10px;
@@ -683,8 +682,7 @@ select:focus-visible {
   background: var(--btn-bg-hover);
 }
 
-/* Base styling for buttons without a dedicated class. Low specificity lets
-   component-specific button styles override these defaults. */
+/* Botones sin clase propia. */
 :where(button:not([class])) {
   min-height: 40px;
   display: inline-flex;
@@ -727,8 +725,7 @@ select:focus-visible {
   border-radius: 50%;
 }
 
-/* Selected chips / tabs ("Todas", "Guardados"...). :root:root raises the
-   specificity so it also wins over rules in feed-experience.css. */
+/* :root:root sube la especificidad por encima de feed-experience.css. */
 :root:root :is(button, a)[aria-pressed="true"],
 :root:root :is(button, a)[aria-selected="true"],
 :root:root :is(button, a).is-active,
@@ -1164,6 +1161,8 @@ select:focus-visible {
   color: var(--ink);
   cursor: pointer;
   padding: 11px;
+  font-size: var(--text-small);
+  font-weight: 650;
 }
 .blocked-dates {
   display: grid;
@@ -1812,7 +1811,7 @@ select {
   min-width: 0;
 }
 
-/* Base responsive rules for shared sections. Feed and doctor-profile breakpoints live in feed-experience.css. */
+/* Reglas responsivas compartidas. */
 @media (max-width: 1180px) {
   .page-width {
     width: min(100% - 48px, 1180px);
