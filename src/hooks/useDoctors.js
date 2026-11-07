@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { doctorsApi } from "../services/doctorsApi";
 import { SOCKET_URL } from "../services/apiConfig";
 import { connectPublicSocket } from "../services/socketClient";
@@ -16,33 +16,67 @@ export function useDoctors() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [serverFilter, setServerFilterState] = useState({
+    q: "",
+    especialidad: "",
+  });
+  const setServerFilter = useCallback(
+    (next) =>
+      setServerFilterState((current) =>
+        current.q === next.q && current.especialidad === next.especialidad
+          ? current
+          : next,
+      ),
+    [],
+  );
+  const firstLoad = useRef(true);
+
+  const loadDoctors = useCallback(async (filter) => {
+    try {
+      const data = await doctorsApi.list(filter);
+      setDoctors(Array.isArray(data) ? data.map(normalizeDoctor) : []);
+      setError("");
+    } catch (requestError) {
+      setDoctors([]);
+      setError(
+        requestError?.code === "API_NOT_CONFIGURED"
+          ? requestError.message
+          : "No fue posible cargar el directorio.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
-    doctorsApi
-      .list()
-      .then((data) => {
-        if (active) {
-          setDoctors(Array.isArray(data) ? data.map(normalizeDoctor) : []);
-          setError("");
-        }
-      })
-      .catch((requestError) => {
-        if (active) {
-          setDoctors([]);
-          setError(
-            requestError?.code === "API_NOT_CONFIGURED"
-              ? requestError.message
-              : "No fue posible cargar el directorio.",
-          );
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const delay = firstLoad.current ? 0 : 300;
+    firstLoad.current = false;
+    const timer = window.setTimeout(() => {
+      if (active) loadDoctors(serverFilter);
+    }, delay);
     return () => {
       active = false;
+      window.clearTimeout(timer);
     };
+  }, [serverFilter, loadDoctors]);
+
+  const getDoctor = useCallback(async (doctorId) => {
+    try {
+      const data = await doctorsApi.get(doctorId);
+      if (!data?._id) return null;
+      const normalized = normalizeDoctor(data);
+      setDoctors((current) =>
+        current.some((doctor) => doctor._id === normalized._id)
+          ? current.map((doctor) =>
+              doctor._id === normalized._id ? normalized : doctor,
+            )
+          : [...current, normalized],
+      );
+      return normalized;
+    } catch {
+      return null;
+    }
   }, []);
 
   useEffect(() => {
@@ -181,6 +215,8 @@ export function useDoctors() {
     doctors,
     loading,
     error,
+    setServerFilter,
+    getDoctor,
     rateDoctor,
     addComment,
     updateComment,

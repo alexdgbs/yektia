@@ -13,7 +13,7 @@ export const sessionTokenFromCookie = (header = "") => {
   return (
     cookies["__Host-yektia_session"] ||
     cookies.yektia_session ||
-    // Keep active sessions created before the Yektia rebrand valid until they expire.
+    // las sesiones de antes del cambio de nombre siguen válidas.
     cookies["__Host-caresync_session"] ||
     cookies.caresync_session ||
     ""

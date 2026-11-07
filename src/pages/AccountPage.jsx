@@ -9,11 +9,12 @@ import ScheduleSettings from "../components/account/ScheduleSettings";
 import PracticeSettings from "../components/account/PracticeSettings";
 import AdminDashboard from "../components/account/AdminDashboard";
 import AppointmentList from "../components/account/AppointmentList";
+import { scrollIntoViewSmooth } from "../utils/scroll";
 import MedicalApplicationPanel, {
   DoctorVerificationStatus,
 } from "../components/account/MedicalApplicationPanel";
 
-function Dashboard({ auth }) {
+function Dashboard({ auth, onNavigate }) {
   const isAdmin = auth.user.role === "admin";
   const [loading, setLoading] = useState(!isAdmin);
   const [appointments, setAppointments] = useState({
@@ -110,7 +111,17 @@ function Dashboard({ auth }) {
             <strong>{auth.user.email}</strong>
           </div>
           {!isAdmin && (
-            <a className="primary-button" href="/#directorio">
+            <a
+              className="primary-button"
+              href="/"
+              onClick={(event) => {
+                event.preventDefault();
+                onNavigate?.("/");
+                window.requestAnimationFrame(() =>
+                  scrollIntoViewSmooth(document.getElementById("directorio")),
+                );
+              }}
+            >
               Buscar especialista
             </a>
           )}
@@ -181,7 +192,7 @@ function Dashboard({ auth }) {
   );
 }
 
-export default function AccountPage({ auth }) {
+export default function AccountPage({ auth, onNavigate }) {
   if (auth.loading) {
     return (
       <div className="page-width">
@@ -190,5 +201,5 @@ export default function AccountPage({ auth }) {
     );
   }
 
-  return auth.user ? <Dashboard auth={auth} /> : <AuthForm auth={auth} />;
+  return auth.user ? <Dashboard auth={auth} onNavigate={onNavigate} /> : <AuthForm auth={auth} />;
 }

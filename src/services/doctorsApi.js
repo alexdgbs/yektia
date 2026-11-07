@@ -1,7 +1,15 @@
 import { apiRequest } from "./apiConfig";
 
 export const doctorsApi = {
-  list: () => apiRequest("/medicos"),
+  list: (params = {}) => {
+    const search = new URLSearchParams();
+    if (params.q?.trim()) search.set("q", params.q.trim());
+    if (params.especialidad?.trim())
+      search.set("especialidad", params.especialidad.trim());
+    const query = search.toString();
+    return apiRequest(query ? `/medicos?${query}` : "/medicos");
+  },
+  get: (doctorId) => apiRequest(`/medicos/${encodeURIComponent(doctorId)}`),
   rate: (doctorId, payload) =>
     apiRequest(`/medicos/${doctorId}/valorar`, {
       method: "POST",

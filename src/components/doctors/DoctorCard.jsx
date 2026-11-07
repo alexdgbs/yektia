@@ -2,12 +2,17 @@ import { useState } from "react";
 import {
   FiCalendar,
   FiCheck,
+  FiClock,
   FiLayers,
   FiMapPin,
   FiShield,
 } from "react-icons/fi";
 import RatingStars from "./RatingStars";
-import { doctorInitials, doctorPrice, doctorRating } from "./doctorPresentation";
+import {
+  doctorInitials,
+  doctorPrice,
+  doctorRating,
+} from "./doctorPresentation";
 
 export default function DoctorCard({
   doctor,
@@ -27,8 +32,12 @@ export default function DoctorCard({
     <article className="doctor-card feed-post">
       <div className="feed-post__eyebrow-row">
         <span className="feed-post__kind">
-          {verified ? <FiShield aria-hidden="true" /> : <FiCheck aria-hidden="true" />}
-          {verified ? "Perfil verificado" : "Perfil profesional"}
+          {verified ? (
+            <FiShield aria-hidden="true" />
+          ) : (
+            <FiClock aria-hidden="true" />
+          )}
+          {verified ? "Perfil verificado" : "Verificación pendiente"}
         </span>
       </div>
 
@@ -72,7 +81,10 @@ export default function DoctorCard({
           {doctor.descripcion ||
             "Consulta su especialidad, ubicación y disponibilidad."}
         </p>
-        <div className="feed-post__summary" aria-label="Resumen del especialista">
+        <div
+          className="feed-post__summary"
+          aria-label="Resumen del especialista"
+        >
           <div className="feed-post__summary-rating">
             <span>Valoración de pacientes</span>
             <div className="feed-post__rating-row">

@@ -1,12 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import {
-  FiLogOut,
-  FiMenu,
-  FiMoon,
-  FiSearch,
-  FiSun,
-  FiX,
-} from "react-icons/fi";
+import { FiLogOut, FiMenu, FiMoon, FiSearch, FiSun, FiX } from "react-icons/fi";
+import { doctorInitials } from "../doctors/doctorPresentation";
 
 const THEME_COLORS = {
   dark: "#121a1e",
@@ -16,21 +10,23 @@ const THEME_COLORS = {
 const getInitialTheme = () => {
   try {
     const savedTheme = localStorage.getItem("yektia-theme");
-    return savedTheme === "dark" || savedTheme === "light" ? savedTheme : "light";
+    return savedTheme === "dark" || savedTheme === "light"
+      ? savedTheme
+      : "light";
   } catch {
     return "light";
   }
 };
 
 const getUserInitials = (name = "") =>
-  name.trim().split(/\s+/).filter(Boolean).slice(0, 2)
-    .map((part) => part[0]).join("").toLocaleUpperCase("es") || "U";
+  doctorInitials(name).toLocaleUpperCase("es") || "U";
 
 export default function Header({
   user,
   onLogout,
   searchQuery = "",
   onSearchChange = () => {},
+  onNavigate,
 }) {
   const [theme, setTheme] = useState(getInitialTheme);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,23 +39,28 @@ export default function Header({
   }, [theme]);
 
   useEffect(() => {
-    document.querySelector('meta[name="theme-color"]')
+    document
+      .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", THEME_COLORS[theme]);
     try {
       localStorage.setItem("yektia-theme", theme);
     } catch {
-      // The UI remains usable when browser storage is unavailable.
+      // si no hay storage, la interfaz sigue funcionando.
     }
   }, [theme]);
 
-  useEffect(() => () => window.clearTimeout(themeTransitionTimeout.current), []);
+  useEffect(
+    () => () => window.clearTimeout(themeTransitionTimeout.current),
+    [],
+  );
 
   const toggleTheme = () => {
     const nextTheme = isDark ? "light" : "dark";
     const root = document.documentElement;
     root.dataset.theme = nextTheme;
     root.classList.add("theme-transition-active");
-    document.querySelector('meta[name="theme-color"]')
+    document
+      .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", THEME_COLORS[nextTheme]);
     window.clearTimeout(themeTransitionTimeout.current);
     themeTransitionTimeout.current = window.setTimeout(
@@ -89,20 +90,38 @@ export default function Header({
     <>
       <header className={`site-header${menuOpen ? " is-menu-open" : ""}`}>
         <div className="header-inner page-width">
-          <a className="brand" href="/" aria-label="Yektia, ir al inicio">Yektia</a>
+          <a
+            className="brand"
+            href="/"
+            aria-label="Yektia, ir al inicio"
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate?.("/");
+            }}
+          >
+            Yektia
+          </a>
           <button
             className="theme-toggle"
             type="button"
             onClick={toggleTheme}
-            aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            aria-label={
+              isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
+            }
             title={isDark ? "Modo claro" : "Modo oscuro"}
           >
-            {isDark ? <FiSun aria-hidden="true" /> : <FiMoon aria-hidden="true" />}
+            {isDark ? (
+              <FiSun aria-hidden="true" />
+            ) : (
+              <FiMoon aria-hidden="true" />
+            )}
           </button>
 
           <div className="header-search">
             <FiSearch aria-hidden="true" />
-            <label className="sr-only" htmlFor="header-specialist-search">Buscar especialistas</label>
+            <label className="sr-only" htmlFor="header-specialist-search">
+              Buscar especialistas
+            </label>
             <input
               id="header-specialist-search"
               type="search"
@@ -125,12 +144,27 @@ export default function Header({
 
           <div className="header-actions">
             <div className="header-desktop-actions">
-              <a className="account-link" href="/cuenta">
-                {user && <span className="account-avatar" aria-hidden="true">{getUserInitials(user.nombre)}</span>}
+              <a
+                className="account-link"
+                href="/cuenta"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onNavigate?.("/cuenta");
+                }}
+              >
+                {user && (
+                  <span className="account-avatar" aria-hidden="true">
+                    {getUserInitials(user.nombre)}
+                  </span>
+                )}
                 <span>{user ? firstName : "Ingresar"}</span>
               </a>
               {user && (
-                <button className="header-logout" type="button" onClick={onLogout}>
+                <button
+                  className="header-logout"
+                  type="button"
+                  onClick={onLogout}
+                >
                   <FiLogOut aria-hidden="true" />
                   <span>Cerrar sesión</span>
                 </button>
@@ -144,7 +178,11 @@ export default function Header({
               aria-controls="mobile-navigation"
               onClick={() => setMenuOpen((current) => !current)}
             >
-              {menuOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
+              {menuOpen ? (
+                <FiX aria-hidden="true" />
+              ) : (
+                <FiMenu aria-hidden="true" />
+              )}
             </button>
           </div>
         </div>
@@ -166,9 +204,22 @@ export default function Header({
                 </span>
                 <span className="mobile-navigation__account-copy">
                   <strong>{user.nombre?.trim() || "Tu cuenta"}</strong>
-                  <small>{user.role === "doctor" ? "Perfil profesional" : "Cuenta personal"}</small>
+                  <small>
+                    {user.role === "doctor"
+                      ? "Perfil profesional"
+                      : "Cuenta personal"}
+                  </small>
                 </span>
-                <a href="/cuenta" onClick={() => setMenuOpen(false)}>Mi cuenta</a>
+                <a
+                  href="/cuenta"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setMenuOpen(false);
+                    onNavigate?.("/cuenta");
+                  }}
+                >
+                  Mi cuenta
+                </a>
               </div>
             )}
             <div className="mobile-navigation__search">
@@ -181,11 +232,28 @@ export default function Header({
                 aria-label="Buscar especialista"
               />
               {searchQuery && (
-                <button type="button" onClick={() => onSearchChange("")} aria-label="Limpiar búsqueda"><FiX /></button>
+                <button
+                  type="button"
+                  onClick={() => onSearchChange("")}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <FiX />
+                </button>
               )}
             </div>
             <div className="mobile-navigation__links">
-              {!user && <a href="/cuenta" onClick={() => setMenuOpen(false)}><span>Ingresar</span></a>}
+              {!user && (
+                <a
+                  href="/cuenta"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setMenuOpen(false);
+                    onNavigate?.("/cuenta");
+                  }}
+                >
+                  <span>Ingresar</span>
+                </a>
+              )}
               {user && (
                 <button
                   className="mobile-navigation__logout"
@@ -195,7 +263,8 @@ export default function Header({
                     onLogout?.();
                   }}
                 >
-                  <FiLogOut aria-hidden="true" /><span>Cerrar sesión</span>
+                  <FiLogOut aria-hidden="true" />
+                  <span>Cerrar sesión</span>
                 </button>
               )}
             </div>

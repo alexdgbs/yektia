@@ -7,12 +7,13 @@ import DoctorPage from "./pages/DoctorPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { useDoctors } from "./hooks/useDoctors";
 import { useAuth } from "./hooks/useAuth";
+import { scrollIntoViewSmooth } from "./utils/scroll";
 import AccountPage from "./pages/AccountPage";
 import "./styles/index.css";
 
-
 const getDoctorIdFromPath = () => {
-  const encodedId = window.location.pathname.match(/^\/doctores\/(.+)$/)?.[1] || "";
+  const encodedId =
+    window.location.pathname.match(/^\/doctores\/(.+)$/)?.[1] || "";
   try {
     return decodeURIComponent(encodedId);
   } catch {
@@ -33,6 +34,7 @@ export default function App() {
     getOpenCalendarFromUrl,
   );
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [doctorLookup, setDoctorLookup] = useState("idle");
   const selectedDoctor = doctorsState.doctors.find(
     (doctor) => doctor._id === selectedDoctorId,
   );
@@ -47,31 +49,55 @@ export default function App() {
     return () => window.removeEventListener("popstate", handleNavigation);
   }, []);
 
+  const navigateTo = useCallback((path, options = {}) => {
+    const url = new URL(path, window.location.origin);
+    if (url.pathname === "/directorio") url.pathname = "/";
+    if (options.replace) {
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    } else {
+      window.history.pushState({}, "", url.pathname + url.search + url.hash);
+    }
+    setSelectedDoctorId(getDoctorIdFromPath());
+    setOpenCalendarOnProfile(getOpenCalendarFromUrl());
+    setCurrentPath(window.location.pathname);
+    setDoctorLookup("idle");
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDoctorId || selectedDoctor || doctorsState.loading) return;
+    if (doctorLookup !== "idle") return;
+    setDoctorLookup("pending");
+    doctorsState
+      .getDoctor(selectedDoctorId)
+      .finally(() => setDoctorLookup("done"));
+  }, [selectedDoctorId, selectedDoctor, doctorsState, doctorLookup]);
+
+  const doctorNotFound =
+    Boolean(selectedDoctorId) &&
+    !doctorsState.loading &&
+    !selectedDoctor &&
+    doctorLookup === "done";
+
   const openDoctor = (doctor, options = {}) => {
     const openCalendar = options.openCalendar === true;
-    const url = `/doctores/${encodeURIComponent(doctor._id)}${openCalendar ? "?agenda=1" : ""}`;
-    window.history.pushState({ yektiaProfileModal: true }, "", url);
-    setSelectedDoctorId(doctor._id);
-    setCurrentPath(window.location.pathname);
-    setOpenCalendarOnProfile(openCalendar);
+    navigateTo(
+      `/doctores/${encodeURIComponent(doctor._id)}${openCalendar ? "?agenda=1" : ""}`,
+    );
   };
 
   const closeDoctor = useCallback(() => {
-    window.history.replaceState({}, "", "/#directorio");
+    window.history.replaceState({}, "", "/");
     setSelectedDoctorId("");
     setCurrentPath("/");
     setOpenCalendarOnProfile(false);
-    window.requestAnimationFrame(() => {
-      document.getElementById("directorio")?.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-        block: "start",
-      });
-    });
+    setDoctorLookup("idle");
+    window.requestAnimationFrame(() =>
+      scrollIntoViewSmooth(document.getElementById("directorio")),
+    );
   }, []);
 
   const showingAccount = currentPath === "/cuenta";
+  const showingDirectory = currentPath === "/" || currentPath === "/directorio";
 
   return (
     <div className="app-shell">
@@ -81,13 +107,16 @@ export default function App() {
           onLogout={auth.logout}
           searchQuery={directoryQuery}
           onSearchChange={setDirectoryQuery}
+          onNavigate={navigateTo}
         />
         <main className="app-main">
           <AnimatePresence mode="wait">
             {showingAccount ? (
-              <AccountPage key="account" auth={auth} />
-            ) : currentPath !== "/" && !selectedDoctorId ? (
-              <NotFoundPage key="not-found" onBack={() => window.location.assign("/")} />
+              <AccountPage key="account" auth={auth} onNavigate={navigateTo} />
+            ) : doctorNotFound ? (
+              <NotFoundPage key="not-found" onBack={closeDoctor} />
+            ) : !showingDirectory && !selectedDoctorId ? (
+              <NotFoundPage key="not-found" onBack={() => navigateTo("/")} />
             ) : (
               <HomePage
                 key="directory"
@@ -96,19 +125,21 @@ export default function App() {
                 auth={auth}
                 query={directoryQuery}
                 onQueryChange={setDirectoryQuery}
+                visibleDoctorId={selectedDoctorId}
+                onServerFilterChange={doctorsState.setServerFilter}
               />
             )}
           </AnimatePresence>
         </main>
-        <Footer />
+        <Footer onNavigate={navigateTo} />
       </div>
 
       <AnimatePresence>
-        {!showingAccount && selectedDoctorId && (
+        {!showingAccount && selectedDoctorId && !doctorNotFound && (
           <DoctorPage
             key={selectedDoctorId}
             doctor={selectedDoctor}
-            loading={doctorsState.loading}
+            loading={doctorsState.loading || doctorLookup === "pending"}
             initialCalendarOpen={openCalendarOnProfile}
             onBack={closeDoctor}
             onRate={doctorsState.rateDoctor}
@@ -116,6 +147,7 @@ export default function App() {
             onUpdateComment={doctorsState.updateComment}
             onDeleteComment={doctorsState.deleteComment}
             auth={auth}
+            onNavigate={navigateTo}
           />
         )}
       </AnimatePresence>

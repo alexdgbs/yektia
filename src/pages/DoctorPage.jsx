@@ -3,6 +3,7 @@ import { motion as Motion } from "framer-motion";
 import { FiX } from "react-icons/fi";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import DoctorProfile from "../components/doctors/DoctorProfile";
+import NotFoundPage from "./NotFoundPage";
 
 export default function DoctorPage({
   doctor,
@@ -14,9 +15,11 @@ export default function DoctorPage({
   onDeleteComment,
   auth,
   initialCalendarOpen = false,
+  onNavigate,
 }) {
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
+  const panelEscapeRef = useRef(null);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -26,6 +29,7 @@ export default function DoctorPage({
 
     const handleKeyboard = (event) => {
       if (event.key === "Escape") {
+        if (panelEscapeRef.current?.()) return;
         onBack();
         return;
       }
@@ -54,11 +58,18 @@ export default function DoctorPage({
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyboard);
-      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+      if (
+        previouslyFocused instanceof HTMLElement &&
+        previouslyFocused.isConnected
+      ) {
         previouslyFocused.focus();
       }
     };
   }, [onBack]);
+
+  if (!loading && !doctor) {
+    return <NotFoundPage onBack={onBack} />;
+  }
 
   return (
     <Motion.div
@@ -77,7 +88,9 @@ export default function DoctorPage({
         ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-label={doctor ? `Perfil de ${doctor.nombre}` : "Perfil del especialista"}
+        aria-label={
+          doctor ? `Perfil de ${doctor.nombre}` : "Perfil del especialista"
+        }
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 5 }}
@@ -103,7 +116,7 @@ export default function DoctorPage({
                 label="Cargando perfil del especialista"
               />
             </div>
-          ) : doctor ? (
+          ) : (
             <DoctorProfile
               doctor={doctor}
               initialCalendarOpen={initialCalendarOpen}
@@ -112,17 +125,9 @@ export default function DoctorPage({
               onUpdateComment={onUpdateComment}
               onDeleteComment={onDeleteComment}
               auth={auth}
-              onClose={onBack}
+              onNavigate={onNavigate}
+              escapeRef={panelEscapeRef}
             />
-          ) : (
-            <div className="doctor-modal__empty">
-              <span className="eyebrow">Perfil no disponible</span>
-              <h1>Este especialista ya no está disponible.</h1>
-              <p>Regresa al directorio para revisar los perfiles disponibles.</p>
-              <button className="primary-button" type="button" onClick={onBack}>
-                Volver al directorio
-              </button>
-            </div>
           )}
         </div>
       </Motion.section>
