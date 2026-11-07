@@ -24,6 +24,24 @@
   .care-feed.has-compare-tray {
     padding-bottom: 168px;
   }
+
+  /* Chips compactos para que quepan completos dentro de la tarjeta. */
+  .feed-discovery-card {
+    padding-inline: 16px;
+  }
+
+  .feed-categories {
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .feed-categories button {
+    min-width: 0;
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
 }
 
 .home-intro {
@@ -1952,7 +1970,7 @@
   .feed-discovery-card {
     gap: 11px;
     margin-bottom: 11px;
-    padding: 13px;
+    padding: 13px 16px;
     border-radius: 17px;
     overflow: clip;
   }
@@ -2001,7 +2019,7 @@
   }
 
   .feed-categories {
-    gap: 8px;
+    gap: 6px;
     width: 100%;
   }
 

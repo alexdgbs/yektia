@@ -7,20 +7,10 @@ export default function Footer({ onNavigate }) {
   return (
     <footer className="site-footer">
       <div className="page-width footer-main">
-        <div className="footer-brand">
-          <a className="brand" href="/" onClick={(event) => go(event, "/")}>
-            <img
-              className="brand-mark"
-              src="/favicon.svg"
-              alt=""
-              aria-hidden="true"
-            />
-            Yektia
-          </a>
-          <p>© 2026 Yektia</p>
-        </div>
+        <a className="brand" href="/" onClick={(event) => go(event, "/")}>
+          Yektia
+        </a>
         <nav className="footer-links" aria-label="Enlaces del pie">
-          <span className="footer-links__title">Explorar</span>
           <a href="/" onClick={(event) => go(event, "/")}>
             Directorio
           </a>
@@ -28,9 +18,7 @@ export default function Footer({ onNavigate }) {
             Mi cuenta
           </a>
         </nav>
-        <p className="footer-note">
-          La información del directorio no sustituye la consulta médica.
-        </p>
+        <p>© 2026 Yektia</p>
       </div>
     </footer>
   );
