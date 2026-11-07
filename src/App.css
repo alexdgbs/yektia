@@ -1972,15 +1972,19 @@ select {
   }
 
   .comparison-column > span {
-    display: grid;
-    grid-template-columns: minmax(94px, 34%) minmax(0, 1fr);
+    display: block;
     min-height: 0;
     padding: 12px 0;
     border-right: 0;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
     font-size: var(--text-caption);
   }
 
   .comparison-column > span::before {
+    display: block;
+    margin-bottom: 4px;
     color: var(--muted);
     font-size: var(--text-meta);
     text-transform: uppercase;
@@ -2007,11 +2011,6 @@ select {
   }
   .comparison-column > span:nth-child(7)::before {
     content: "Modalidad";
-  }
-
-  .comparison-doctor strong,
-  .comparison-doctor small {
-    grid-column: 2;
   }
 
   .comparison-column > button {
@@ -2140,10 +2139,6 @@ select {
   .compare-tray {
     left: 12px;
     right: 12px;
-  }
-
-  .comparison-column > span {
-    grid-template-columns: 88px minmax(0, 1fr);
   }
 }
 
