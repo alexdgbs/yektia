@@ -1,6 +1,8 @@
 :root {
   color-scheme: light;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", sans-serif;
   color: var(--ink);
   background: var(--page);
   --text-caption: 0.75rem;
@@ -19,7 +21,7 @@
   --line-strong: rgba(29, 37, 33, 0.14);
   --accent-text: #2f5444;
   --pale: #edf4ef;
-  --mint: #e6f1ea;
+  --accent-soft: #e6f1ea;
   --green: #477764;
   --btn-bg: #dcebe2;
   --btn-bg-hover: #cde2d4;
@@ -53,7 +55,7 @@
   --line-strong: rgba(242, 245, 247, 0.13);
   --accent-text: #cfe0fb;
   --pale: #232c3a;
-  --mint: #263246;
+  --accent-soft: #263246;
   --green: #9dbcf0;
   --btn-bg: rgba(157, 188, 240, 0.16);
   --btn-bg-hover: rgba(157, 188, 240, 0.26);
@@ -672,7 +674,9 @@ select:focus-visible {
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 180ms var(--ease), opacity 180ms ease;
+  transition:
+    transform 180ms var(--ease),
+    opacity 180ms ease;
 }
 .primary-button:hover {
   transform: translateY(-1px);
@@ -698,7 +702,10 @@ select:focus-visible {
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: transform 180ms var(--ease), background 180ms ease, color 180ms ease;
+  transition:
+    transform 180ms var(--ease),
+    background 180ms ease,
+    color 180ms ease;
 }
 :where(button:not([class])):hover:not(:disabled) {
   transform: translateY(-1px);
@@ -1405,7 +1412,9 @@ select:focus-visible {
   text-align: left;
   overflow-wrap: anywhere;
   cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
 }
 .admin-layout aside button:hover {
   background: var(--soft);
@@ -1495,7 +1504,9 @@ select:focus-visible {
   white-space: normal;
   line-height: 1.4;
   cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
 }
 .review-documents button:hover {
   border-color: var(--btn-border);
@@ -1977,13 +1988,27 @@ select {
     letter-spacing: 0.07em;
   }
 
-  .comparison-column > span:nth-child(1)::before { content: "Especialista"; }
-  .comparison-column > span:nth-child(2)::before { content: "Experiencia"; }
-  .comparison-column > span:nth-child(3)::before { content: "Valoración"; }
-  .comparison-column > span:nth-child(4)::before { content: "Disponibilidad"; }
-  .comparison-column > span:nth-child(5)::before { content: "Consulta"; }
-  .comparison-column > span:nth-child(6)::before { content: "Ubicación"; }
-  .comparison-column > span:nth-child(7)::before { content: "Modalidad"; }
+  .comparison-column > span:nth-child(1)::before {
+    content: "Especialista";
+  }
+  .comparison-column > span:nth-child(2)::before {
+    content: "Experiencia";
+  }
+  .comparison-column > span:nth-child(3)::before {
+    content: "Valoración";
+  }
+  .comparison-column > span:nth-child(4)::before {
+    content: "Disponibilidad";
+  }
+  .comparison-column > span:nth-child(5)::before {
+    content: "Consulta";
+  }
+  .comparison-column > span:nth-child(6)::before {
+    content: "Ubicación";
+  }
+  .comparison-column > span:nth-child(7)::before {
+    content: "Modalidad";
+  }
 
   .comparison-doctor strong,
   .comparison-doctor small {

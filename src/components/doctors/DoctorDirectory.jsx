@@ -9,6 +9,8 @@ import {
 } from "react-icons/fi";
 import LoadingSkeleton from "../LoadingSkeleton";
 import DoctorCard from "./DoctorCard";
+import { doctorPrice, doctorRating } from "./doctorPresentation";
+import { getAccountKey } from "../../hooks/useAuth";
 
 export default function DoctorDirectory({
   doctors,
@@ -18,19 +20,22 @@ export default function DoctorDirectory({
   auth,
   query = "",
   onQueryChange = () => {},
+  visibleDoctorId = "",
+  onServerFilterChange = () => {},
 }) {
   const [compared, setCompared] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState("Todas");
   const [favoriteIds, setFavoriteIds] = useState(new Set());
-  const accountUserId = auth.user
-    ? String(auth.user.email || auth.user.id || auth.user._id || "authenticated")
-    : null;
+  const accountUserId = auth.user ? getAccountKey(auth.user) : null;
   const accountFavoritesKey = [...(auth.user?.favoriteDoctorIds || [])]
     .map(String)
     .sort()
     .join(",");
+  const suggestions = doctors
+    .filter((doctor) => String(doctor._id) !== String(visibleDoctorId))
+    .slice(0, 5);
   const filtered = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("es");
     return doctors.filter(
@@ -48,12 +53,17 @@ export default function DoctorDirectory({
   const specialties = useMemo(
     () => [
       "Todas",
-      ...new Set(
-        doctors.map((doctor) => doctor.especialidad).filter(Boolean),
-      ),
+      ...new Set(doctors.map((doctor) => doctor.especialidad).filter(Boolean)),
     ],
     [doctors],
   );
+
+  useEffect(() => {
+    onServerFilterChange({
+      q: query,
+      especialidad: selectedSpecialty === "Todas" ? "" : selectedSpecialty,
+    });
+  }, [query, selectedSpecialty, onServerFilterChange]);
 
   useEffect(() => {
     setFavoriteIds(new Set(accountFavoritesKey.split(",").filter(Boolean)));
@@ -77,21 +87,40 @@ export default function DoctorDirectory({
     });
 
   return (
-    <section className="care-feed" id="directorio">
+    <section
+      className={`care-feed${compared.length > 0 ? " has-compare-tray" : ""}`}
+      id="directorio"
+    >
       <div className="page-width care-feed__page">
         <div className="care-feed-layout">
-          <aside className="feed-rail feed-rail--left" aria-label={auth.user ? `Espacio de ${auth.user.nombre}` : "Información de Yektia"}>
+          <aside
+            className="feed-rail feed-rail--left"
+            aria-label={
+              auth.user
+                ? `Espacio de ${auth.user.nombre}`
+                : "Información de Yektia"
+            }
+          >
             <section className="feed-rail-profile">
-              <div className="feed-rail-profile__cover" aria-hidden="true" />
+              <div className="feed-rail-profile__cover">
+                <span>
+                  {doctors.length}{" "}
+                  {doctors.length === 1
+                    ? "perfil verificado"
+                    : "perfiles verificados"}
+                </span>
+              </div>
               <div className="feed-rail-profile__content">
                 <span className="feed-rail-profile__mark">
-                  {auth.user?.nombre?.trim() || "yektia"}
+                  {auth.user?.nombre?.trim() || "Directorio Yektia"}
                 </span>
                 <h2>{auth.user ? "Tu espacio en Yektia" : "Especialistas"}</h2>
                 {auth.user ? (
                   <>
                     <p className="feed-rail-profile__eyebrow">
-                      {auth.user.role === "doctor" ? "Perfil profesional" : "Cuenta personal"}
+                      {auth.user.role === "doctor"
+                        ? "Perfil profesional"
+                        : "Cuenta personal"}
                     </p>
                     <p>
                       {auth.user.role === "doctor"
@@ -101,23 +130,39 @@ export default function DoctorDirectory({
                   </>
                 ) : (
                   <>
-                    <p className="feed-rail-profile__eyebrow">Directorio médico</p>
-                    <p>
-                      Perfiles, opiniones y horarios disponibles.
+                    <p className="feed-rail-profile__eyebrow">
+                      Directorio médico
                     </p>
+                    <p>Perfiles, opiniones y horarios disponibles.</p>
                   </>
                 )}
               </div>
             </section>
 
-            <section className="feed-rail-card feed-reservation-card" aria-labelledby="reservation-guide-title">
+            <section
+              className="feed-rail-card feed-reservation-card"
+              aria-labelledby="reservation-guide-title"
+            >
               <header>
                 <h3 id="reservation-guide-title">Antes de reservar</h3>
               </header>
               <div className="feed-reservation-card__content">
-                <p><strong>Revisa el perfil</strong><span>Confirma especialidad, cédula, ubicación y precio.</span></p>
-                <p><strong>Elige un horario</strong><span>Comprueba la disponibilidad antes de enviar tu solicitud.</span></p>
-                <p><strong>Da seguimiento</strong><span>Consulta la confirmación desde tu cuenta.</span></p>
+                <p>
+                  <strong>Revisa el perfil</strong>
+                  <span>
+                    Confirma especialidad, cédula, ubicación y precio.
+                  </span>
+                </p>
+                <p>
+                  <strong>Elige un horario</strong>
+                  <span>
+                    Comprueba la disponibilidad antes de enviar tu solicitud.
+                  </span>
+                </p>
+                <p>
+                  <strong>Da seguimiento</strong>
+                  <span>Consulta la confirmación desde tu cuenta.</span>
+                </p>
               </div>
             </section>
           </aside>
@@ -138,7 +183,9 @@ export default function DoctorDirectory({
                         : selectedSpecialty}
                   </h2>
                   <span className="search-count" aria-live="polite">
-                    {loading ? "Cargando perfiles…" : `${filtered.length} ${filtered.length === 1 ? "perfil" : "perfiles"}`}
+                    {loading
+                      ? "Cargando perfiles…"
+                      : `${filtered.length} ${filtered.length === 1 ? "perfil" : "perfiles"}`}
                   </span>
                 </div>
                 <div className="favorite-filter">
@@ -152,7 +199,9 @@ export default function DoctorDirectory({
                   >
                     <FiBookmark aria-hidden="true" />
                     <span className="favorite-filter__label">Guardados</span>
-                    <span className="favorite-filter__count">{favoriteIds.size}</span>
+                    <span className="favorite-filter__count">
+                      {favoriteIds.size}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -165,7 +214,9 @@ export default function DoctorDirectory({
                   <button
                     key={specialty}
                     type="button"
-                    className={selectedSpecialty === specialty ? "is-active" : ""}
+                    className={
+                      selectedSpecialty === specialty ? "is-active" : ""
+                    }
                     onClick={() => setSelectedSpecialty(specialty)}
                     aria-pressed={selectedSpecialty === specialty}
                   >
@@ -194,8 +245,12 @@ export default function DoctorDirectory({
                     doctor={doctor}
                     onSelect={onSelectDoctor}
                     onCompare={toggleCompare}
-                    isOwnProfile={String(auth.user?.doctorId || "") === String(doctor._id)}
-                    isCompared={compared.some((item) => item._id === doctor._id)}
+                    isOwnProfile={
+                      String(auth.user?.doctorId || "") === String(doctor._id)
+                    }
+                    isCompared={compared.some(
+                      (item) => item._id === doctor._id,
+                    )}
                   />
                 ))}
               </div>
@@ -219,14 +274,17 @@ export default function DoctorDirectory({
             )}
           </div>
 
-          <aside className="feed-rail feed-rail--right" aria-label="Especialistas sugeridos y criterios de atención">
-            <section className="feed-rail-card feed-suggest-card">
-              <header>
-                <h3>Otros especialistas</h3>
-              </header>
-              {doctors.length ? (
+          <aside
+            className="feed-rail feed-rail--right"
+            aria-label="Especialistas sugeridos y criterios de atención"
+          >
+            {suggestions.length >= 2 && (
+              <section className="feed-rail-card feed-suggest-card">
+                <header>
+                  <h3>Otros especialistas</h3>
+                </header>
                 <div className="feed-suggest-list">
-                  {doctors.slice(0, 5).map((doctor) => (
+                  {suggestions.map((doctor) => (
                     <button
                       className="feed-suggest-item"
                       key={doctor._id}
@@ -235,7 +293,15 @@ export default function DoctorDirectory({
                       aria-label={`Ver el perfil de ${doctor.nombre}`}
                     >
                       <span className="feed-suggest-avatar" aria-hidden="true">
-                        <strong>{doctor.nombre?.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toLocaleUpperCase("es") || "E"}</strong>
+                        <strong>
+                          {doctor.nombre
+                            ?.trim()
+                            .split(/\s+/)
+                            .slice(0, 2)
+                            .map((part) => part[0])
+                            .join("")
+                            .toLocaleUpperCase("es") || "E"}
+                        </strong>
                         {doctor.imagen && (
                           <img
                             src={doctor.imagen}
@@ -252,10 +318,8 @@ export default function DoctorDirectory({
                     </button>
                   ))}
                 </div>
-              ) : (
-                <p className="feed-suggest-empty">Los perfiles de especialistas aparecerán aquí cuando estén disponibles.</p>
-              )}
-            </section>
+              </section>
+            )}
 
             <section className="feed-rail-card feed-trust-card">
               <header>
@@ -264,15 +328,28 @@ export default function DoctorDirectory({
               <ul>
                 <li>
                   <FiShield aria-hidden="true" />
-                  <span><strong>Perfiles verificados</strong><small>Revisamos las credenciales antes de publicar.</small></span>
+                  <span>
+                    <strong>Perfiles verificados</strong>
+                    <small>Revisamos las credenciales antes de publicar.</small>
+                  </span>
                 </li>
                 <li>
                   <FiCheck aria-hidden="true" />
-                  <span><strong>Sin posiciones pagadas</strong><small>Los resultados no se compran ni se patrocinan.</small></span>
+                  <span>
+                    <strong>Sin posiciones pagadas</strong>
+                    <small>
+                      Los resultados no se compran ni se patrocinan.
+                    </small>
+                  </span>
                 </li>
                 <li>
                   <FiCalendar aria-hidden="true" />
-                  <span><strong>Información actualizada</strong><small>Disponibilidad, precio y valoraciones ayudan a decidir.</small></span>
+                  <span>
+                    <strong>Información actualizada</strong>
+                    <small>
+                      Disponibilidad, precio y valoraciones ayudan a decidir.
+                    </small>
+                  </span>
                 </li>
               </ul>
             </section>
@@ -315,7 +392,8 @@ export default function DoctorDirectory({
             className="comparison-backdrop"
             role="presentation"
             onMouseDown={(event) => {
-              if (event.target === event.currentTarget) setShowComparison(false);
+              if (event.target === event.currentTarget)
+                setShowComparison(false);
             }}
           >
             <section
@@ -350,9 +428,8 @@ export default function DoctorDirectory({
                   <span />
                 </div>
                 {compared.map((doctor) => {
-                  const count = Math.max(0, Number(doctor.ratingCount) || 0);
-                  const average = count ? Number(doctor.promedio) || 0 : 0;
-                  const price = Number(doctor.precio);
+                  const { count, average } = doctorRating(doctor);
+                  const price = doctorPrice(doctor, "Por confirmar");
                   return (
                     <div className="comparison-column" key={doctor._id}>
                       <span className="comparison-doctor">
@@ -362,20 +439,33 @@ export default function DoctorDirectory({
                       <span>{doctor.descripcion || "Por confirmar"}</span>
                       <span>
                         {count ? (
-                          <><b>{average.toFixed(1)}</b> / 5 · {count} {count === 1 ? "valoración" : "valoraciones"}</>
-                        ) : "Sin valoraciones"}
+                          <>
+                            <b>{average.toFixed(1)}</b> / 5 · {count}{" "}
+                            {count === 1 ? "valoración" : "valoraciones"}
+                          </>
+                        ) : (
+                          "Sin valoraciones"
+                        )}
                       </span>
                       <span className="comparison-positive">
-                        {doctor.disponibilidad ? <><FiCheck /> {doctor.disponibilidad}</> : "Consultar agenda en el perfil"}
+                        {doctor.disponibilidad ? (
+                          <>
+                            <FiCheck /> {doctor.disponibilidad}
+                          </>
+                        ) : (
+                          "Consultar agenda en el perfil"
+                        )}
                       </span>
-                      <span>
-                        {price > 0
-                          ? new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(price)
-                          : "Por confirmar"}
-                      </span>
+                      <span>{price}</span>
                       <span>{doctor.ubicacion || "Por confirmar"}</span>
                       <span>Consulta particular</span>
-                      <button type="button" onClick={() => { setShowComparison(false); onSelectDoctor(doctor); }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowComparison(false);
+                          onSelectDoctor(doctor);
+                        }}
+                      >
                         Ver perfil
                       </button>
                     </div>

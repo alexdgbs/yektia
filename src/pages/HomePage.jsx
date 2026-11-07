@@ -1,7 +1,17 @@
 import { motion as Motion, useReducedMotion } from "framer-motion";
 import DoctorDirectory from "../components/doctors/DoctorDirectory";
+import CareSteps from "../components/home/CareSteps";
+import AboutSection from "../components/home/AboutSection";
 
-export default function HomePage({ doctorsState, onSelectDoctor, auth, query, onQueryChange }) {
+export default function HomePage({
+  doctorsState,
+  onSelectDoctor,
+  auth,
+  query,
+  onQueryChange,
+  visibleDoctorId,
+  onServerFilterChange,
+}) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -19,7 +29,11 @@ export default function HomePage({ doctorsState, onSelectDoctor, auth, query, on
         auth={auth}
         query={query}
         onQueryChange={onQueryChange}
+        visibleDoctorId={visibleDoctorId}
+        onServerFilterChange={onServerFilterChange}
       />
+      <CareSteps />
+      <AboutSection />
     </Motion.div>
   );
 }

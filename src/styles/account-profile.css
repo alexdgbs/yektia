@@ -273,7 +273,6 @@
   border-radius: 14px;
   background: var(--soft);
   color: var(--ink);
-  
 }
 
 .settings-grid textarea {
@@ -334,7 +333,9 @@
   font-size: var(--text-small);
   font-weight: 550;
   line-height: 1.4;
-  transition: color 160ms ease, box-shadow 160ms ease;
+  transition:
+    color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .account-settings-form input::placeholder {
@@ -481,7 +482,9 @@
   font-weight: 550;
   line-height: 1.4;
   box-shadow: none;
-  transition: color 160ms ease, box-shadow 160ms ease;
+  transition:
+    color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .medical-form input::placeholder {
@@ -721,7 +724,7 @@
 }
 
 .appointment-status--confirmed {
-  background: var(--mint);
+  background: var(--accent-soft);
   color: var(--green);
 }
 
@@ -1139,8 +1142,6 @@
 
 /* Availability is an integrated action rail, not a floating notice. */
 
- 
-
 /* Disclosure controls: every expandable surface has an explicit, tappable close action. */
 
 /* Account/profile responsive system. */
@@ -1386,4 +1387,3 @@
     grid-template-columns: 1fr;
   }
 }
-
