@@ -293,6 +293,15 @@
   margin-top: 2px;
 }
 
+/* El botón de "Información pública" va a todo el ancho del formulario,
+   igual que "Guardar agenda": en una sola celda del grid de 2 columnas
+   quedaba casi cuadrado y el radio 999px lo volvía un círculo. */
+.settings-grid.professional-settings > .primary-button {
+  grid-column: 1 / -1;
+  width: 100%;
+  justify-self: stretch;
+}
+
 .settings-grid small[role="status"] {
   display: flex;
   align-items: center;
