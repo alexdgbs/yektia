@@ -1,7 +1,5 @@
 import { motion as Motion, useReducedMotion } from "framer-motion";
 import DoctorDirectory from "../components/doctors/DoctorDirectory";
-import CareSteps from "../components/home/CareSteps";
-import AboutSection from "../components/home/AboutSection";
 
 export default function HomePage({
   doctorsState,
@@ -10,7 +8,6 @@ export default function HomePage({
   query,
   onQueryChange,
   visibleDoctorId,
-  onServerFilterChange,
 }) {
   const reduceMotion = useReducedMotion();
 
@@ -39,10 +36,7 @@ export default function HomePage({
         query={query}
         onQueryChange={onQueryChange}
         visibleDoctorId={visibleDoctorId}
-        onServerFilterChange={onServerFilterChange}
       />
-      <CareSteps />
-      <AboutSection />
     </Motion.div>
   );
 }

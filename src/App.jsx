@@ -126,7 +126,6 @@ export default function App() {
                 query={directoryQuery}
                 onQueryChange={setDirectoryQuery}
                 visibleDoctorId={selectedDoctorId}
-                onServerFilterChange={doctorsState.setServerFilter}
               />
             )}
           </AnimatePresence>

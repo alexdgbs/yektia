@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { doctorsApi } from "../services/doctorsApi";
 import { SOCKET_URL } from "../services/apiConfig";
 import { connectPublicSocket } from "../services/socketClient";
@@ -16,24 +16,13 @@ export function useDoctors() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [serverFilter, setServerFilterState] = useState({
-    q: "",
-    especialidad: "",
-  });
-  const setServerFilter = useCallback(
-    (next) =>
-      setServerFilterState((current) =>
-        current.q === next.q && current.especialidad === next.especialidad
-          ? current
-          : next,
-      ),
-    [],
-  );
-  const firstLoad = useRef(true);
 
-  const loadDoctors = useCallback(async (filter) => {
+  // El directorio completo se carga una vez; los filtros (búsqueda,
+  // especialidad, guardados) se aplican en el cliente, así la lista de
+  // especialidades y el total no cambian al filtrar.
+  const loadDoctors = useCallback(async () => {
     try {
-      const data = await doctorsApi.list(filter);
+      const data = await doctorsApi.list();
       setDoctors(Array.isArray(data) ? data.map(normalizeDoctor) : []);
       setError("");
     } catch (requestError) {
@@ -49,17 +38,8 @@ export function useDoctors() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    const delay = firstLoad.current ? 0 : 300;
-    firstLoad.current = false;
-    const timer = window.setTimeout(() => {
-      if (active) loadDoctors(serverFilter);
-    }, delay);
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [serverFilter, loadDoctors]);
+    loadDoctors();
+  }, [loadDoctors]);
 
   const getDoctor = useCallback(async (doctorId) => {
     try {
@@ -215,7 +195,6 @@ export function useDoctors() {
     doctors,
     loading,
     error,
-    setServerFilter,
     getDoctor,
     rateDoctor,
     addComment,

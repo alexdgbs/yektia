@@ -48,23 +48,35 @@ export const parseConsultationPrice = (value) => {
     : null;
 };
 
+// Sin tildes y en minúsculas, para comparar texto sin importar acentos.
+const normalizeText = (value = "") =>
+  value
+    .toLocaleLowerCase("es")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+// Cada palabra buscada debe coincidir con el inicio de una palabra del
+// perfil: "ana" encuentra a Ana, pero no a Mariana.
+const matchesSearch = (doctor, search) => {
+  const words = normalizeText(search).split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const haystack = normalizeText(
+    `${doctor.nombre || ""} ${doctor.especialidad || ""} ${doctor.ubicacion || ""}`,
+  ).split(/\s+/);
+  return words.every((word) => haystack.some((item) => item.startsWith(word)));
+};
+
 export async function listDoctors(_request, response, next) {
   try {
     const query = { verificationStatus: "verified" };
     const { specialty, search, limit } = parseDoctorQuery(_request.query);
     if (specialty) query.especialidad = specialty;
-    if (search) {
-      const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      query.$or = [
-        { nombre: new RegExp(safeSearch, "i") },
-        { especialidad: new RegExp(safeSearch, "i") },
-        { ubicacion: new RegExp(safeSearch, "i") },
-      ];
-    }
     const doctors = await Doctor.find(query).sort({ nombre: 1 }).limit(limit);
     response.set("Cache-Control", "private, max-age=30");
     response.json(
-      doctors.map((doctor) => doctor.toPublicJSON(_request.user?.id)),
+      doctors
+        .filter((doctor) => matchesSearch(doctor, search))
+        .map((doctor) => doctor.toPublicJSON(_request.user?.id)),
     );
   } catch (error) {
     next(error);
