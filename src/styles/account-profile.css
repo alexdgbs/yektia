@@ -36,7 +36,7 @@
   gap: 18px;
   width: min(480px, 100%);
   justify-self: end;
-  padding: 28px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--panel);
@@ -102,7 +102,7 @@
   justify-content: space-between;
   align-items: flex-end;
   gap: 28px;
-  padding: 26px 28px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--panel);
@@ -110,12 +110,15 @@
 }
 
 .dashboard-header__copy {
+  display: grid;
+  gap: 6px;
+  align-content: start;
   min-width: 0;
 }
 
 .dashboard h1 {
   max-width: 900px;
-  margin: 10px 0 9px;
+  margin: 0;
   color: var(--ink);
   font-size: clamp(32px, 4vw, 46px);
   font-weight: 620;
@@ -200,7 +203,7 @@
 .application-summary,
 .dashboard-professional-stack > .settings-panel {
   margin: 0;
-  padding: 26px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--panel);
@@ -232,9 +235,9 @@
 .application-summary h2 {
   margin: 0;
   color: var(--ink);
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1.1;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.05em;
 }
 
 .settings-panel header p,
@@ -261,7 +264,7 @@
   min-width: 0;
   color: var(--muted);
   font-size: var(--text-caption);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .settings-grid input,
@@ -653,7 +656,7 @@
 
 .appointments-list {
   margin-top: 18px;
-  padding: 26px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--panel);
@@ -671,7 +674,7 @@
 .appointments-list h2 {
   margin: 0;
   color: var(--ink);
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
@@ -1262,7 +1265,7 @@
   .application-panel,
   .appointments-list,
   .dashboard-professional-stack > .settings-panel {
-    padding: 22px;
+    padding: 20px;
     border-radius: 20px;
   }
 

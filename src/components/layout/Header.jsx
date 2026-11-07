@@ -99,12 +99,6 @@ export default function Header({
               onNavigate?.("/");
             }}
           >
-            <img
-              className="brand-mark"
-              src="/favicon.svg"
-              alt=""
-              aria-hidden="true"
-            />
             Yektia
           </a>
           <button

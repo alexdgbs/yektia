@@ -229,19 +229,12 @@ select:focus-visible {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
   min-height: 44px;
   color: var(--ink);
   text-decoration: none;
   font-size: 23px;
   font-weight: 700;
   letter-spacing: -0.055em;
-}
-
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
 }
 
 .mobile-navigation__search input {
@@ -1294,59 +1287,31 @@ select:focus-visible {
   min-width: 0;
   width: 100%;
   margin-top: auto;
-  border-top: 1px solid var(--line);
   background: var(--page);
-  color: var(--ink);
+  color: var(--muted);
 }
 
 .footer-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.2fr);
-  gap: 28px;
-  align-items: start;
-  padding: 32px 0 34px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 26px;
+  padding: 26px 0 30px;
 }
 
-.footer-brand {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.footer-brand .brand {
+.footer-main .brand {
   min-height: 32px;
   font-size: 20px;
 }
 
-.footer-brand .brand-mark {
-  width: 26px;
-  height: 26px;
-}
-
-.footer-brand > p {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--text-meta);
-  line-height: 1.45;
-}
-
 .footer-links {
-  display: grid;
-  gap: 10px;
-  align-content: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
   min-width: 0;
 }
 
-.footer-links__title {
-  color: var(--muted);
-  font-size: var(--text-meta);
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
 .footer-links a {
-  justify-self: start;
   color: var(--muted);
   font-size: var(--text-caption);
   font-weight: 650;
@@ -1358,12 +1323,11 @@ select:focus-visible {
   text-decoration: underline;
 }
 
-.footer-note {
-  max-width: 340px;
-  margin: 0;
+.footer-main > p {
+  margin: 0 0 0 auto;
   color: var(--muted);
-  font-size: var(--text-caption);
-  line-height: 1.55;
+  font-size: var(--text-meta);
+  line-height: 1.45;
 }
 
 .review-note {
@@ -2034,20 +1998,14 @@ select {
   }
 
   .footer-main {
-    grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 28px 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 24px 0 28px;
   }
 
-  .footer-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 20px;
-  }
-
-  .footer-links__title {
-    flex-basis: 100%;
+  .footer-main > p {
+    margin-left: 0;
   }
 
   .slot-list {
