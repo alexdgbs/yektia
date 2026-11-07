@@ -17,13 +17,12 @@ Requisitos: Node.js 22.12 o posterior y npm.
 
 ```bash
 npm ci
-cp .env.example .env
 npm run dev
 ```
 
 ### Variables de entorno (frontend)
 
-Copia `.env.example` a `.env` y ajusta los valores:
+Crea un archivo `.env` en la raíz con estas variables:
 
 ```env
 VITE_API_REST=https://tu-dominio-del-backend/api
@@ -61,13 +60,12 @@ Requisitos: Node.js 22.12 o posterior, npm y una base MongoDB.
 ```bash
 cd backend
 npm ci
-cp .env.example .env
 npm run dev
 ```
 
 ### Variables de entorno (backend)
 
-Copia `backend/.env.example` a `backend/.env`:
+Crea `backend/.env` con:
 
 ```env
 MONGO_URI=mongodb+srv://usuario:contraseña@cluster/tu-base
