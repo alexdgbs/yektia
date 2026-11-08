@@ -295,6 +295,10 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* La luna va con las acciones, a la derecha, también en escritorio. */
+.theme-toggle {
   margin-left: auto;
 }
 
@@ -700,15 +704,6 @@ select:focus-visible {
   flex: 0 0 auto;
 }
 
-/* Round icon-only button: close (X), dismiss, etc. */
-:where(button:not([class]):has(> svg:only-child)) {
-  width: 34px;
-  height: 34px;
-  min-height: 0;
-  padding: 0;
-  border-radius: 50%;
-}
-
 /* :root:root sube la especificidad por encima de feed-experience.css. */
 :root:root :is(button, a)[aria-pressed="true"],
 :root:root :is(button, a)[aria-selected="true"],
@@ -856,6 +851,7 @@ select:focus-visible {
 }
 
 .comparison-panel > header button {
+  flex: 0 0 auto;
   width: 40px;
   height: 40px;
   display: grid;
@@ -1124,7 +1120,7 @@ select:focus-visible {
 .schedule-rule {
   display: grid;
   gap: 9px;
-  grid-template-columns: 1fr 1fr 135px 135px auto;
+  grid-template-columns: 1fr 1fr 135px 135px;
   align-items: end;
 }
 .schedule-rule > button,

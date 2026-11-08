@@ -124,6 +124,9 @@
 
 .account-sidebar__nav button,
 .account-sidebar__logout {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   min-height: 42px;
   padding: 10px 12px;
   border: 0;
@@ -238,6 +241,7 @@
 .account-quick button {
   display: grid;
   gap: 6px;
+  justify-content: start;
   justify-items: start;
   padding: 18px;
   border: 1px solid var(--line);
@@ -415,6 +419,12 @@
   background-size: 12px 8px;
 }
 
+/* El icono del reloj y del calendario también quedaba pegado al borde. */
+.schedule-settings input[type="time"]::-webkit-calendar-picker-indicator,
+.blocked-dates input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-right: 8px;
+}
+
 .settings-grid textarea {
   min-height: 100px;
   resize: vertical;
@@ -509,6 +519,12 @@
 
 .account-settings-form > button {
   margin-top: 16px;
+}
+
+/* "Guardar cuenta" a todo lo ancho, como "Guardar perfil" y "Guardar agenda". */
+.settings-grid.account-settings-form > .primary-button {
+  width: 100%;
+  justify-self: stretch;
 }
 
 .account-settings-form small[role="status"] {
@@ -1293,6 +1309,7 @@
     grid-template-columns: 1fr;
     gap: 34px;
     align-items: start;
+    align-content: start;
   }
 
   .google-auth-panel {
