@@ -403,6 +403,18 @@
   color: var(--ink);
 }
 
+/* Flecha propia: la nativa queda pegada al borde en móvil. */
+.schedule-settings select,
+.schedule-rule select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%237d8580' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 12px 8px;
+}
+
 .settings-grid textarea {
   min-height: 100px;
   resize: vertical;
@@ -414,7 +426,7 @@
 .schedule-settings select:focus,
 .schedule-rule select:focus {
   border-color: color-mix(in srgb, var(--green) 68%, var(--line));
-  background: var(--panel);
+  background-color: var(--panel);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 12%, transparent);
   outline: none;
 }
@@ -1302,18 +1314,18 @@
   .account-sidebar {
     position: static;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
     padding: 8px;
     border-radius: 18px;
   }
 
   .account-sidebar__nav {
     display: flex;
-    flex: 1;
     flex-wrap: wrap;
-    gap: 2px;
+    justify-content: flex-start;
+    gap: 6px;
     min-width: 0;
   }
 
