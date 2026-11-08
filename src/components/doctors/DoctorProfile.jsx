@@ -495,7 +495,7 @@ export default function DoctorProfile({
             </button>
           </section>
         )}
-        {!isOwnProfile && showCalendar && (
+        {showCalendar && (
           <aside className="appointment-brief is-open">
             <div className="appointment-summary">
               <div>

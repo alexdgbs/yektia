@@ -491,6 +491,28 @@ describe("Pasada 11: disponibilidad de solo lectura (P1-6)", () => {
       2,
     );
   });
+
+  it("la primera visita ya ve los huecos del horario semanal", async () => {
+    const fresh = await Doctor.create({
+      nombre: "Dra. Primera",
+      especialidad: "General",
+      verificationStatus: "verified",
+      appointmentDuration: 45,
+      weeklySchedule: [0, 1, 2, 3, 4, 5, 6].map((day) => ({
+        day,
+        start: "09:00",
+        end: "18:00",
+      })),
+    });
+    const result = await request(app).get(
+      `/api/appointments/availability/${fresh.id}`,
+    );
+    expect(result.status).toBe(200);
+    expect(result.body.length).toBeGreaterThan(0);
+    expect(
+      result.body.every((slot) => slot.status === "open"),
+    ).toBe(true);
+  });
 });
 
 describe("Pasada 11: precio como número (P1-13)", () => {

@@ -31,6 +31,17 @@ export default function DoctorDirectory({
 }) {
   const [compared, setCompared] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
+  // Si la carga tarda, avisa que la API está despertando (cold start).
+  const [slowLoad, setSlowLoad] = useState(false);
+  useEffect(() => {
+    if (!loading) return undefined;
+    setSlowLoad(false);
+    const timer = setTimeout(() => setSlowLoad(true), 6000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+  const loadingText = slowLoad
+    ? "Cargando perfiles… La API está despertando, puede tardar unos segundos más."
+    : "Cargando perfiles…";
   // La cuenta enlaza aquí con ?guardados=1 para ver solo los guardados.
   const [favoritesOnly, setFavoritesOnly] = useState(
     () => new URLSearchParams(window.location.search).get("guardados") === "1",
@@ -106,7 +117,7 @@ export default function DoctorDirectory({
               <div className="feed-rail-profile__cover">
                 <span>
                   {loading
-                    ? "Cargando perfiles…"
+                    ? loadingText
                     : `${formatCount(doctors.length, "perfil verificado", "perfiles verificados")}`}
                 </span>
               </div>
@@ -184,7 +195,7 @@ export default function DoctorDirectory({
                   </h2>
                   <span className="search-count" aria-live="polite">
                     {loading
-                      ? "Cargando perfiles…"
+                      ? loadingText
                       : `${filtered.length} ${filtered.length === 1 ? "perfil" : "perfiles"}`}
                   </span>
                 </div>

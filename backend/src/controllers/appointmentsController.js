@@ -42,17 +42,18 @@ export async function listAvailability(request, response, next) {
       return response
         .status(404)
         .json({ message: "Especialista no encontrado" });
-    // Solo lectura: la sincronizacion corre fuera del request para no
-    // escribir en BD en un GET; la respuesta usa los huecos actuales.
+    // Si los huecos están desactualizados, se sincronizan antes de responder:
+    // si no, el primer visitante vería "sin horarios" aunque el doctor sí
+    // tenga horario. Si la sincronización falla, se responde con lo guardado.
     if (
       !doctor.availabilitySyncedAt ||
       doctor.availabilitySyncedAt < new Date(Date.now() - 12 * 60 * 60 * 1000)
     ) {
-      setImmediate(() => {
-        refreshAvailability(doctor).catch((error) =>
-          console.error("No se pudo sincronizar la disponibilidad.", error),
-        );
-      });
+      try {
+        await refreshAvailability(doctor);
+      } catch (error) {
+        console.error("No se pudo sincronizar la disponibilidad.", error);
+      }
     }
     const slots = await AvailabilitySlot.find({
       doctor: request.params.doctorId,

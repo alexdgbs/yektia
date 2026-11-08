@@ -1035,12 +1035,10 @@
 
 .appointment-day small {
   max-width: 100%;
-  overflow: hidden;
   color: var(--muted);
   font-size: var(--text-meta);
   line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .appointment-day.is-available {
