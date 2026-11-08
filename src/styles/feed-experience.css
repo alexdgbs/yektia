@@ -2052,14 +2052,17 @@
   }
 
   .feed-post__actions {
-    gap: 2px;
-    padding: 6px 7px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px 14px;
   }
 
   .feed-post__actions button {
+    width: 100%;
     min-height: 44px;
-    gap: 6px;
-    padding-inline: 6px;
+    gap: 8px;
+    padding-inline: 12px;
     font-size: var(--text-caption);
   }
 
@@ -2287,9 +2290,7 @@
   }
 
   .feed-post__actions button {
-    flex-direction: column;
     min-height: 47px;
-    gap: 3px;
   }
 
   .profile-rating {
