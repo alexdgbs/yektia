@@ -146,19 +146,6 @@ button:disabled {
   background: var(--canvas);
 }
 
-/* Banda fija tras la cabecera flotante: tapa el contenido que sube al hacer scroll, para que ningún botón quede cortado a la mitad arriba. Va en .app-shell porque .app-frame recorta el contenido (overflow: clip) y la banda no tapaba nada. */
-.app-shell::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 40;
-  height: 110px;
-  background: var(--page);
-  pointer-events: none;
-}
-
 .app-frame {
   display: flex;
   flex-direction: column;
