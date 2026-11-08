@@ -30,7 +30,10 @@ export default function DoctorDirectory({
 }) {
   const [compared, setCompared] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  // La cuenta enlaza aquí con ?guardados=1 para ver solo los guardados.
+  const [favoritesOnly, setFavoritesOnly] = useState(
+    () => new URLSearchParams(window.location.search).get("guardados") === "1",
+  );
   const [selectedSpecialty, setSelectedSpecialty] = useState("Todas");
   // Los favoritos se leen directo de la cuenta, para que el contador y
   // el filtro nunca se desincronicen.
