@@ -926,6 +926,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--soft);
@@ -2147,7 +2148,7 @@
 
   .profile-quick-actions {
     grid-template-columns: repeat(3, 42px);
-    justify-content: center;
+    justify-content: start;
     gap: 7px;
     margin-top: 14px;
   }
