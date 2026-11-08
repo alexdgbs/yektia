@@ -12,6 +12,7 @@ import {
   doctorInitials,
   doctorPrice,
   doctorRating,
+  isPriceMissing,
 } from "./doctorPresentation";
 
 export default function DoctorCard({
@@ -25,7 +26,7 @@ export default function DoctorCard({
   const initials = doctorInitials(doctor.nombre);
   const { count: ratingCount, average } = doctorRating(doctor);
   const formattedPrice = doctorPrice(doctor);
-  const pricePending = doctor.precio === "" || doctor.precio == null;
+  const pricePending = isPriceMissing(doctor.precio);
   const verified = doctor.verificationStatus === "verified";
 
   return (
@@ -85,17 +86,17 @@ export default function DoctorCard({
           className="feed-post__summary"
           aria-label="Resumen del especialista"
         >
-          <div className="feed-post__summary-rating">
-            <span>Valoración de pacientes</span>
-            <div className="feed-post__rating-row">
-              <RatingStars value={average} />
-              <small>
-                {ratingCount
-                  ? `${average.toFixed(1)} · ${ratingCount} ${ratingCount === 1 ? "valoración" : "valoraciones"}`
-                  : "Aún sin valoraciones"}
-              </small>
+          {ratingCount > 0 && (
+            <div className="feed-post__summary-rating">
+              <span>Valoración de pacientes</span>
+              <div className="feed-post__rating-row">
+                <RatingStars value={average} />
+                <small>
+                  {`${average.toFixed(1)} · ${ratingCount} ${ratingCount === 1 ? "valoración" : "valoraciones"}`}
+                </small>
+              </div>
             </div>
-          </div>
+          )}
           <div className="feed-post__summary-price">
             <span>Consulta particular</span>
             <strong className={pricePending ? "is-pending" : "is-confirmed"}>

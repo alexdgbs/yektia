@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FiLogOut, FiMenu, FiMoon, FiSearch, FiSun, FiX } from "react-icons/fi";
 import { doctorFirstName, doctorInitials } from "../doctors/doctorPresentation";
 
+// Par de colores de tema: el mismo que el script anti-parpadeo de
+// index.html y --canvas en App.css.
 const THEME_COLORS = {
   dark: "#121a1e",
   light: "#e9efeb",
@@ -212,7 +214,7 @@ export default function Header({
                   onClick={() => onSearchChange("")}
                   aria-label="Limpiar búsqueda"
                 >
-                  <FiX />
+                  <FiX aria-hidden="true" />
                 </button>
               )}
             </div>

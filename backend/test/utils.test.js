@@ -26,12 +26,13 @@ test("matches search by word prefix, without accents", () => {
   );
 });
 
-test("bounds limits and trims text", () => {
+test("bounds limits and rejects overlong text", () => {
   assert.equal(parseLimit("500"), 100);
   assert.equal(parseLimit("0"), 1);
   assert.equal(parseLimit("abc"), 50);
-  assert.equal(cleanText("  hola  ", 3), "hol");
+  assert.equal(cleanText("  hola  ", 5), "hola");
   assert.equal(cleanText(42), "");
+  assert.throws(() => cleanText("  hola  ", 3), /supera el límite/);
 });
 
 test("validates Mongo ids", () => {

@@ -1,12 +1,13 @@
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
-import { MEXICO_CITY_OFFSET_MINUTES } from "../utils/constants.js";
+import {
+  APPOINTMENT_DURATIONS,
+  MEXICO_CITY_OFFSET_MINUTES,
+  TIME_PATTERN,
+  TIMEZONE_OFFSET_MAX_MINUTES,
+  TIMEZONE_OFFSET_MIN_MINUTES,
+  timeToMinutes as minutes,
+} from "../utils/constants.js";
 import { dateKeyAtOffset } from "../utils/dates.js";
-
-const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
-const minutes = (value) => {
-  const match = TIME.exec(value);
-  return match ? Number(match[1]) * 60 + Number(match[2]) : -1;
-};
 export const isCalendarDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);
@@ -36,10 +37,10 @@ export function validateSchedule(input) {
     .filter(isCalendarDate)
     .slice(0, 120);
   if (
-    ![15, 30, 45, 60, 90].includes(duration) ||
+    !APPOINTMENT_DURATIONS.includes(duration) ||
     !Number.isInteger(timezoneOffset) ||
-    timezoneOffset < -720 ||
-    timezoneOffset > 840 ||
+    timezoneOffset < TIMEZONE_OFFSET_MIN_MINUTES ||
+    timezoneOffset > TIMEZONE_OFFSET_MAX_MINUTES ||
     rules.length < 1 ||
     rules.length > 7
   )
@@ -49,26 +50,13 @@ export function validateSchedule(input) {
       !Number.isInteger(rule.day) ||
       rule.day < 0 ||
       rule.day > 6 ||
-      minutes(rule.start) < 0 ||
+      !TIME_PATTERN.test(rule.start) ||
+      !TIME_PATTERN.test(rule.end) ||
       minutes(rule.end) <= minutes(rule.start)
     )
       return null;
-  const order = [1, 2, 3, 4, 5, 6, 0];
-  const sorted = [...rules].sort(
-    (a, b) => order.indexOf(a.day) - order.indexOf(b.day),
-  );
-  if (
-    new Set(sorted.map((rule) => rule.day)).size !== sorted.length ||
-    sorted.some(
-      (rule) => rule.start !== sorted[0]?.start || rule.end !== sorted[0]?.end,
-    ) ||
-    sorted.some(
-      (rule, index) =>
-        index &&
-        order.indexOf(rule.day) !== order.indexOf(sorted[index - 1].day) + 1,
-    )
-  )
-    return null;
+  // Cada día aparece una sola vez; cada día puede tener su propio horario.
+  if (new Set(rules.map((rule) => rule.day)).size !== rules.length) return null;
   return { duration, timezoneOffset, rules, blockedDates };
 }
 

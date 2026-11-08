@@ -1,8 +1,2 @@
-// Fecha "YYYY-MM-DD" en la zona del offset dado (minutos respecto a UTC).
-export const dateKeyAtOffset = (value, offsetMinutes) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Date(date.getTime() + offsetMinutes * 60_000)
-    .toISOString()
-    .slice(0, 10);
-};
+// La fecha con offset vive en shared/ para que el frontend use la misma.
+export { dateKeyAtOffset } from "../../../shared/index.js";

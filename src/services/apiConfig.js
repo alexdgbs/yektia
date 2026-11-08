@@ -15,6 +15,22 @@ export const SOCKET_URL =
   import.meta.env.VITE_SOCKET_URL?.trim().replace(/\/+$/, "") ||
   configuredApiUrl.replace(/\/api$/, "");
 
+// Descarga autenticada fuera de apiRequest (que solo devuelve JSON).
+export async function apiRequestBlob(path) {
+  if (!API_URL) {
+    const error = new Error(
+      "Configura VITE_API_REST con la URL pública del backend de Yektia.",
+    );
+    error.code = "API_NOT_CONFIGURED";
+    throw error;
+  }
+  const response = await fetch(`${API_URL}${path}`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("No fue posible abrir el documento");
+  return response.blob();
+}
+
 async function parseResponse(response) {
   if (response.status === 204) return null;
 
@@ -22,8 +38,7 @@ async function parseResponse(response) {
   if (contentType.includes("application/json")) {
     try {
       return await response.json();
-    } catch (error) {
-      console.warn("La respuesta no era JSON válido.", error);
+    } catch {
       return null;
     }
   }

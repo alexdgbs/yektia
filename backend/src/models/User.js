@@ -1,3 +1,4 @@
+import { MAX_FAVORITE_DOCTORS } from "../utils/constants.js";
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
@@ -24,12 +25,14 @@ const userSchema = new mongoose.Schema(
       sparse: true,
       unique: true,
     },
-    emailVerifiedAt: { type: Date, default: null },
     telefono: { type: String, default: "", trim: true, maxlength: 30 },
     favoriteDoctors: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Medico" }],
       default: [],
-      validate: [(items) => items.length <= 100, "Máximo 100 favoritos"],
+      validate: [
+        (items) => items.length <= MAX_FAVORITE_DOCTORS,
+        "Máximo 100 favoritos",
+      ],
     },
     medicalDecision: {
       type: new mongoose.Schema(

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { loadGoogleIdentityScript } from "../../utils/googleScript";
 
 const initializedGoogleClientIds = new Set();
 
@@ -23,17 +24,19 @@ function GoogleLoginButton({ auth, setStatus, setBusy }) {
     };
   }, [googleLogin, setBusy, setStatus]);
 
+  // El script de Google se carga solo aquí, cuando hace falta el botón.
   useEffect(() => {
     if (ready) return undefined;
-
-    const script = document.querySelector(
-      'script[src="https://accounts.google.com/gsi/client"]',
-    );
-    const handleLoad = () => setReady(Boolean(window.google?.accounts?.id));
-
-    script?.addEventListener("load", handleLoad);
-    return () => script?.removeEventListener("load", handleLoad);
-  }, [ready]);
+    let active = true;
+    loadGoogleIdentityScript().then((loaded) => {
+      if (!active) return;
+      if (loaded) setReady(true);
+      else setStatus("No se pudo cargar el inicio con Google.");
+    });
+    return () => {
+      active = false;
+    };
+  }, [ready, setStatus]);
 
   useEffect(() => {
     const element = buttonRef.current;
@@ -58,7 +61,8 @@ function GoogleLoginButton({ auth, setStatus, setBusy }) {
         390,
         Math.max(240, Math.floor(buttonRef.current.clientWidth)),
       );
-      if (width === renderedWidth && buttonRef.current.childNodes.length) return;
+      if (width === renderedWidth && buttonRef.current.childNodes.length)
+        return;
       renderedWidth = width;
       buttonRef.current.replaceChildren();
       googleIdentity.renderButton(buttonRef.current, {
@@ -100,9 +104,7 @@ export default function AuthForm({ auth }) {
       <div className="account-auth__intro">
         <span className="eyebrow">Mi cuenta</span>
         <h1>Accede a tu cuenta</h1>
-        <p>
-          Consulta tus citas y actualiza tus datos desde aquí.
-        </p>
+        <p>Consulta tus citas y actualiza tus datos desde aquí.</p>
       </div>
 
       <div className="google-auth-panel">

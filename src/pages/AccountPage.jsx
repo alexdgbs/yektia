@@ -1,8 +1,7 @@
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { accountApi } from "../services/accountApi";
-import { SOCKET_URL } from "../services/apiConfig";
-import { connectAuthenticatedSocket } from "../services/socketClient";
+import { useAuthenticatedSocket } from "../hooks/useSocket";
 import AuthForm from "../components/account/AuthForm";
 import AccountSettings from "../components/account/AccountSettings";
 import ScheduleSettings from "../components/account/ScheduleSettings";
@@ -75,31 +74,13 @@ function Dashboard({ auth, onNavigate }) {
     load();
   }, [load]);
 
-  useEffect(() => {
-    if (!SOCKET_URL) return undefined;
-
-    let socket;
-    let active = true;
-
-    connectAuthenticatedSocket()
-      .then((connected) => {
-        if (!active) {
-          connected.disconnect();
-          return;
-        }
-        socket = connected;
-        socket.on("cita_actualizada", load);
-        socket.on("solicitud_medica_actualizada", auth.refresh);
-      })
-      .catch((error) => {
-        console.error("No se pudo conectar el socket de la cuenta.", error);
-      });
-
-    return () => {
-      active = false;
-      socket?.disconnect();
-    };
-  }, [load, auth.refresh]);
+  useAuthenticatedSocket(
+    {
+      cita_actualizada: load,
+      solicitud_medica_actualizada: auth.refresh,
+    },
+    [load, auth.refresh],
+  );
 
   const update = async (id, next) => {
     try {
@@ -130,7 +111,11 @@ function Dashboard({ auth, onNavigate }) {
     : isDoctor
       ? "Médico"
       : "Paciente";
-  const upcoming = isAdmin ? null : nextAppointment(appointments.personal);
+  // El médico ve su próxima cita con un paciente; el paciente, su próxima
+  // cita. Antes el médico siempre miraba su lista personal (vacía).
+  const upcoming = isAdmin
+    ? null
+    : nextAppointment(isDoctor ? appointments.practice : appointments.personal);
 
   // Solo las secciones que hoy existen en la cuenta.
   // "Inicio" es el panel de la cuenta, no un enlace fuera.
@@ -167,7 +152,7 @@ function Dashboard({ auth, onNavigate }) {
               <button
                 type="button"
                 key={item.id}
-                aria-current={activeSection === item.id}
+                aria-current={activeSection === item.id ? true : undefined}
                 onClick={() => showSection(item.id)}
               >
                 {item.label}
@@ -229,13 +214,16 @@ function Dashboard({ auth, onNavigate }) {
                 {upcoming ? (
                   <>
                     <h2>
-                      {upcoming.doctor?.nombre ||
-                        "El profesional ya no está disponible"}
+                      {isDoctor
+                        ? upcoming.patient?.nombre || "Paciente"
+                        : upcoming.doctor?.nombre ||
+                          "El profesional ya no está disponible"}
                     </h2>
                     <p>
-                      {upcoming.doctor?.especialidad ||
-                        "El perfil fue retirado del directorio."}
-                      {" · "}
+                      {isDoctor
+                        ? ""
+                        : (upcoming.doctor?.especialidad ||
+                            "El perfil fue retirado del directorio.") + " · "}
                       {date(upcoming.slot?.startsAt)}
                       {" · "}
                       {APPOINTMENT[upcoming.status]}
@@ -244,7 +232,11 @@ function Dashboard({ auth, onNavigate }) {
                 ) : (
                   <>
                     <h2>Sin consultas próximas</h2>
-                    <p>Agenda tu primera consulta cuando quieras.</p>
+                    <p>
+                      {isDoctor
+                        ? "No tienes citas próximas con pacientes."
+                        : "Agenda tu primera consulta cuando quieras."}
+                    </p>
                   </>
                 )}
               </div>
@@ -252,9 +244,21 @@ function Dashboard({ auth, onNavigate }) {
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={() => showSection("consultas")}
+                  onClick={() =>
+                    showSection(isDoctor ? "pacientes" : "consultas")
+                  }
                 >
-                  Ver mis consultas
+                  {isDoctor
+                    ? "Ver citas de mis pacientes"
+                    : "Ver mis consultas"}
+                </button>
+              ) : isDoctor ? (
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => showSection("agenda")}
+                >
+                  Revisar mi agenda
                 </button>
               ) : (
                 <button
@@ -288,7 +292,7 @@ function Dashboard({ auth, onNavigate }) {
           <AccountSettings auth={auth} />
         ) : activeSection === "verificacion" ? (
           isDoctor ? (
-            <DoctorVerificationStatus />
+            <DoctorVerificationStatus auth={auth} />
           ) : (
             <MedicalApplicationPanel auth={auth} />
           )

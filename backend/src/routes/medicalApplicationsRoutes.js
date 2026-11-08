@@ -16,6 +16,7 @@ import {
 } from "../controllers/medicalApplicationsController.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { interactionRateLimit } from "../middleware/rateLimit.js";
+import { MAX_DOCUMENT_BYTES } from "../utils/constants.js";
 
 export const medicalApplicationsRouter = Router();
 medicalApplicationsRouter.use(requireAuth);
@@ -32,7 +33,7 @@ medicalApplicationsRouter.put(
   interactionRateLimit,
   express.raw({
     type: ["application/pdf", "image/jpeg", "image/png"],
-    limit: "5mb",
+    limit: MAX_DOCUMENT_BYTES,
   }),
   uploadDocument,
 );

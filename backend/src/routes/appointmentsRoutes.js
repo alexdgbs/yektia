@@ -8,10 +8,17 @@ import {
   updateMySchedule,
 } from "../controllers/appointmentsController.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
-import { interactionRateLimit } from "../middleware/rateLimit.js";
+import {
+  interactionRateLimit,
+  readRateLimit,
+} from "../middleware/rateLimit.js";
 
 export const appointmentsRouter = Router();
-appointmentsRouter.get("/availability/:doctorId", listAvailability);
+appointmentsRouter.get(
+  "/availability/:doctorId",
+  readRateLimit,
+  listAvailability,
+);
 appointmentsRouter.get(
   "/schedule/me",
   requireAuth,

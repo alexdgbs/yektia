@@ -6,6 +6,14 @@ import { User } from "../models/User.js";
 import { Appointment } from "../models/Appointment.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
 import { cleanText, isValidId, parseLimit } from "../utils/validation.js";
+import { isValidPersonName, isValidPhone } from "../utils/constants.js";
+import { synchronizeAvailability } from "../services/scheduleService.js";
+import {
+  restoreUpdate,
+  sessionOptions,
+  sessionQuery,
+  withOptionalTransaction,
+} from "../services/transaction.js";
 
 const editableStatuses = ["draft", "changes_requested"];
 const documentTypes = ["identity", "professional_license", "specialty_license"];
@@ -37,10 +45,9 @@ export const requiredMedicalDocumentTypes = (specialtyLicense = "") => [
   "professional_license",
   ...(specialtyLicense.trim() ? ["specialty_license"] : []),
 ];
-const personNamePattern = /^[\p{L}\p{M}.' -]+$/u;
 const specialtyPattern = /^[\p{L}\p{M}.'() /&-]+$/u;
 const digitsPattern = /^\d+$/;
-const validPhone = (value) => !value || /^\d{10}$/.test(value);
+const validPhone = (value) => !value || isValidPhone(value);
 export const matchesDocumentSignature = (buffer, mimeType) => {
   if (!Buffer.isBuffer(buffer)) return false;
   if (mimeType === "application/pdf")
@@ -97,15 +104,20 @@ const applicationJSON = async (application) => {
     })),
   };
 };
-const audit = (request, action, entityId, metadata = {}) =>
-  AuditEvent.create({
-    actor: request.user._id,
-    action,
-    entityType: "medical_application",
-    entityId,
-    metadata,
-    requestId: request.id,
-  });
+const audit = (request, action, entityId, metadata = {}, session) =>
+  AuditEvent.create(
+    [
+      {
+        actor: request.user._id,
+        action,
+        entityType: "medical_application",
+        entityId,
+        metadata,
+        requestId: request.id,
+      },
+    ],
+    sessionOptions(session),
+  );
 export const professionalErasureFields = () => ({
   nombre: "Profesional retirado",
   especialidad: "No disponible",
@@ -115,11 +127,9 @@ export const professionalErasureFields = () => ({
   imagen: "",
   ubicacion: "",
   disponibilidad: "",
-  precio: "",
+  precio: null,
   idiomas: [],
   seguros: [],
-  actualizado: "",
-  fuente: "",
   verificationStatus: "removed",
   weeklySchedule: [],
   blockedDates: [],
@@ -159,7 +169,7 @@ export async function saveMyApplication(request, response, next) {
       return response.status(400).json({
         message: "Completa nombre legal, cédula profesional y especialidad",
       });
-    if (!personNamePattern.test(payload.legalName))
+    if (!isValidPersonName(payload.legalName))
       return response
         .status(400)
         .json({ message: "El nombre sólo puede contener letras" });
@@ -271,10 +281,8 @@ export async function deleteMyDraft(request, response, next) {
         .status(409)
         .json({ message: "La solicitud no se puede descartar" });
     await MedicalDocument.deleteMany({ application: application._id });
-    await AuditEvent.deleteMany({
-      entityType: "medical_application",
-      entityId: application._id,
-    });
+    // Los eventos de auditoria se conservan: son la pista de la solicitud.
+    await audit(request, "application_deleted", application._id);
     await MedicalApplication.deleteOne({ _id: application._id });
     return response.status(204).end();
   } catch (error) {
@@ -386,52 +394,130 @@ export async function reviewApplication(request, response, next) {
       return response
         .status(409)
         .json({ message: "La solicitud no está disponible para revisión" });
-    if (status === "approved") {
-      const duplicate = await Doctor.findOne({
-        cedula: application.professionalLicense,
-        _id: { $ne: application.doctor },
+    const applicantBefore = await User.findById(application.applicant)
+      .select("nombre role doctor medicalDecision")
+      .lean();
+    const applicationBefore = {
+      status: application.status,
+      reviewNote: application.reviewNote,
+      reviewedAt: application.reviewedAt,
+      reviewedBy: application.reviewedBy,
+      doctor: application.doctor,
+    };
+    try {
+      await withOptionalTransaction(async (session) => {
+        const opts = sessionOptions(session);
+        let doctorBefore = null;
+        let doctorCreatedId = null;
+        try {
+          if (status === "approved") {
+            const duplicate = await sessionQuery(
+              Doctor.findOne({
+                cedula: application.professionalLicense,
+                _id: { $ne: application.doctor },
+              }),
+              session,
+            );
+            if (duplicate)
+              throw Object.assign(
+                new Error("La cédula ya está vinculada a otro perfil"),
+                { status: 409 },
+              );
+            let doctor = application.doctor
+              ? await sessionQuery(Doctor.findById(application.doctor), session)
+              : null;
+            doctorBefore = doctor ? doctor.toObject() : null;
+            doctor = doctor || new Doctor();
+            Object.assign(doctor, {
+              nombre: application.legalName,
+              especialidad: application.specialty,
+              cedula: application.professionalLicense,
+              telefono: application.phone,
+              ubicacion: application.location,
+              verificationStatus: "verified",
+            });
+            await doctor.save(opts);
+            if (!doctorBefore) doctorCreatedId = doctor._id;
+            await User.updateOne(
+              { _id: application.applicant },
+              {
+                nombre: application.legalName,
+                role: "doctor",
+                doctor: doctor._id,
+              },
+              opts,
+            );
+            application.doctor = doctor._id;
+          }
+          application.status = status;
+          application.reviewNote = reviewNote;
+          application.reviewedAt = new Date();
+          application.reviewedBy = request.user._id;
+          await application.save(opts);
+          await User.updateOne(
+            { _id: application.applicant },
+            {
+              medicalDecision: {
+                status,
+                note: reviewNote,
+                decidedAt: application.reviewedAt,
+              },
+            },
+            opts,
+          );
+          await audit(
+            request,
+            `application_${status}`,
+            application._id,
+            {
+              reviewNote,
+            },
+            session,
+          );
+        } catch (error) {
+          if (!session) {
+            // Sin transaccion se revierte a mano lo ya escrito.
+            try {
+              if (doctorCreatedId)
+                await Doctor.deleteOne({ _id: doctorCreatedId });
+              else if (doctorBefore)
+                await Doctor.updateOne(
+                  { _id: doctorBefore._id },
+                  restoreUpdate({
+                    nombre: doctorBefore.nombre,
+                    especialidad: doctorBefore.especialidad,
+                    cedula: doctorBefore.cedula,
+                    telefono: doctorBefore.telefono,
+                    ubicacion: doctorBefore.ubicacion,
+                    verificationStatus: doctorBefore.verificationStatus,
+                  }),
+                );
+              if (applicantBefore)
+                await User.updateOne(
+                  { _id: application.applicant },
+                  restoreUpdate({
+                    nombre: applicantBefore.nombre,
+                    role: applicantBefore.role,
+                    doctor: applicantBefore.doctor,
+                    medicalDecision: applicantBefore.medicalDecision,
+                  }),
+                );
+              await MedicalApplication.updateOne(
+                { _id: application._id },
+                restoreUpdate(applicationBefore),
+              );
+            } catch (revertError) {
+              console.error("No se pudo revertir la revisión.", revertError);
+            }
+          }
+          throw error;
+        }
       });
-      if (duplicate)
-        return response
-          .status(409)
-          .json({ message: "La cédula ya está vinculada a otro perfil" });
-      let doctor = application.doctor
-        ? await Doctor.findById(application.doctor)
-        : null;
-      doctor = doctor || new Doctor();
-      Object.assign(doctor, {
-        nombre: application.legalName,
-        especialidad: application.specialty,
-        cedula: application.professionalLicense,
-        telefono: application.phone,
-        ubicacion: application.location,
-        verificationStatus: "verified",
-      });
-      await doctor.save();
-      await User.updateOne(
-        { _id: application.applicant },
-        { nombre: application.legalName, role: "doctor", doctor: doctor._id },
-      );
-      application.doctor = doctor._id;
+    } catch (error) {
+      if (error?.status)
+        return response.status(error.status).json({ message: error.message });
+      throw error;
     }
-    application.status = status;
-    application.reviewNote = reviewNote;
-    application.reviewedAt = new Date();
-    application.reviewedBy = request.user._id;
-    await application.save();
-    await User.updateOne(
-      { _id: application.applicant },
-      {
-        medicalDecision: {
-          status,
-          note: reviewNote,
-          decidedAt: application.reviewedAt,
-        },
-      },
-    );
-    await audit(request, `application_${status}`, application._id, {
-      reviewNote,
-    });
     request.app
       .get("io")
       ?.to?.(`user:${application.applicant}`)
@@ -480,10 +566,8 @@ export async function deleteApplication(request, response, next) {
         .status(409)
         .json({ message: "Solo puedes eliminar solicitudes rechazadas" });
     await MedicalDocument.deleteMany({ application: application._id });
-    await AuditEvent.deleteMany({
-      entityType: "medical_application",
-      entityId: application._id,
-    });
+    // Los eventos de auditoria se conservan: son la pista de la solicitud.
+    await audit(request, "application_deleted", application._id);
     await MedicalApplication.deleteOne({
       _id: application._id,
       status: "rejected",
@@ -512,6 +596,20 @@ export async function withdrawDoctor(request, response, next) {
     const note =
       cleanText(request.body.note, 1000) ||
       "Perfil retirado del directorio a solicitud del profesional.";
+    const doctorBefore = await Doctor.findById(application.doctor)
+      .select(
+        "verificationStatus weeklySchedule blockedDates availabilitySyncedAt",
+      )
+      .lean();
+    const applicantBefore = await User.findById(application.applicant)
+      .select("role doctor medicalDecision")
+      .lean();
+    const applicationBefore = {
+      status: application.status,
+      reviewNote: application.reviewNote,
+      reviewedAt: application.reviewedAt,
+      reviewedBy: application.reviewedBy,
+    };
     const futureSlots = await AvailabilitySlot.find({
       doctor: application.doctor,
       startsAt: { $gt: new Date() },
@@ -521,39 +619,102 @@ export async function withdrawDoctor(request, response, next) {
       ? await Appointment.find({
           slot: { $in: slotIds },
           status: { $in: ["pending", "confirmed"] },
-        }).select("_id patient")
+        }).select("_id patient status")
       : [];
-    await Doctor.updateOne(
-      { _id: application.doctor },
-      {
-        verificationStatus: "removed",
-        weeklySchedule: [],
-        blockedDates: [],
-        availabilitySyncedAt: null,
-      },
-    );
-    if (slotIds.length) {
-      await Appointment.updateMany(
-        { _id: { $in: affected.map((item) => item._id) } },
-        { status: "cancelled" },
-      );
-      await AvailabilitySlot.deleteMany({
-        _id: { $in: slotIds },
-        status: "open",
-      });
-    }
-    await User.updateOne(
-      { _id: application.applicant },
-      { role: "patient", $unset: { doctor: 1, medicalDecision: 1 } },
-    );
-    application.status = "withdrawn";
-    application.reviewNote = note;
-    application.reviewedAt = new Date();
-    application.reviewedBy = request.user._id;
-    await application.save();
-    await audit(request, "doctor_withdrawn", application._id, {
-      note,
-      cancelledAppointments: affected.length,
+    await withOptionalTransaction(async (session) => {
+      const opts = sessionOptions(session);
+      let appointmentsCancelled = false;
+      let slotsDeleted = false;
+      try {
+        await Doctor.updateOne(
+          { _id: application.doctor },
+          {
+            verificationStatus: "removed",
+            weeklySchedule: [],
+            blockedDates: [],
+            availabilitySyncedAt: null,
+          },
+          opts,
+        );
+        if (slotIds.length) {
+          await Appointment.updateMany(
+            { _id: { $in: affected.map((item) => item._id) } },
+            { status: "cancelled" },
+            opts,
+          );
+          appointmentsCancelled = true;
+          await AvailabilitySlot.deleteMany(
+            {
+              _id: { $in: slotIds },
+              status: "open",
+            },
+            opts,
+          );
+          slotsDeleted = true;
+        }
+        await User.updateOne(
+          { _id: application.applicant },
+          { role: "patient", $unset: { doctor: 1, medicalDecision: 1 } },
+          opts,
+        );
+        application.status = "withdrawn";
+        application.reviewNote = note;
+        application.reviewedAt = new Date();
+        application.reviewedBy = request.user._id;
+        await application.save(opts);
+        await audit(
+          request,
+          "doctor_withdrawn",
+          application._id,
+          {
+            note,
+            cancelledAppointments: affected.length,
+          },
+          session,
+        );
+      } catch (error) {
+        if (!session) {
+          // Sin transaccion se revierte a mano lo ya escrito.
+          try {
+            if (doctorBefore)
+              await Doctor.updateOne(
+                { _id: application.doctor },
+                restoreUpdate({
+                  verificationStatus: doctorBefore.verificationStatus,
+                  weeklySchedule: doctorBefore.weeklySchedule,
+                  blockedDates: doctorBefore.blockedDates,
+                  availabilitySyncedAt: doctorBefore.availabilitySyncedAt,
+                }),
+              );
+            if (appointmentsCancelled)
+              for (const item of affected)
+                await Appointment.updateOne(
+                  { _id: item._id },
+                  { status: item.status },
+                );
+            if (slotsDeleted) {
+              const doctor = await Doctor.findById(application.doctor);
+              if (doctor) await synchronizeAvailability(doctor);
+            }
+            if (applicantBefore)
+              await User.updateOne(
+                { _id: application.applicant },
+                restoreUpdate({
+                  role: applicantBefore.role,
+                  doctor: applicantBefore.doctor,
+                  medicalDecision: applicantBefore.medicalDecision,
+                }),
+              );
+            await MedicalApplication.updateOne(
+              { _id: application._id },
+              restoreUpdate(applicationBefore),
+            );
+          } catch (revertError) {
+            console.error("No se pudo revertir el retiro.", revertError);
+          }
+        }
+        throw error;
+      }
     });
     const io = request.app.get("io");
     io?.emit?.("agenda_actualizada", {
@@ -599,24 +760,66 @@ export async function eraseDoctorData(request, response, next) {
       return response
         .status(404)
         .json({ message: "Perfil médico no encontrado" });
-    await MedicalDocument.deleteMany({ application: application._id });
-    await AuditEvent.deleteMany({
-      entityType: "medical_application",
-      entityId: application._id,
-    });
-    Object.assign(doctor, professionalErasureFields());
-    await doctor.save();
-    await MedicalApplication.deleteOne({
-      _id: application._id,
-      status: "withdrawn",
-    });
-    await AuditEvent.create({
-      actor: request.user._id,
-      action: "professional_data_erased",
-      entityType: "doctor_tombstone",
-      entityId: doctor._id,
-      metadata: {},
-      requestId: request.id,
+    const doctorBefore = doctor.toObject();
+    const applicationBefore = application.toObject();
+    const erasedFields = Object.keys(professionalErasureFields());
+    await withOptionalTransaction(async (session) => {
+      const opts = sessionOptions(session);
+      let doctorErased = false;
+      let applicationDeleted = false;
+      try {
+        Object.assign(doctor, professionalErasureFields());
+        await doctor.save(opts);
+        doctorErased = true;
+        await MedicalApplication.deleteOne(
+          {
+            _id: application._id,
+            status: "withdrawn",
+          },
+          opts,
+        );
+        applicationDeleted = true;
+        // Los documentos se borran al final: no se pueden recuperar.
+        await MedicalDocument.deleteMany(
+          { application: application._id },
+          opts,
+        );
+        // Los eventos de auditoria de la solicitud se conservan; solo se
+        // deja constancia del borrado con un evento aparte.
+        await AuditEvent.create(
+          [
+            {
+              actor: request.user._id,
+              action: "professional_data_erased",
+              entityType: "doctor_tombstone",
+              entityId: doctor._id,
+              metadata: {},
+              requestId: request.id,
+            },
+          ],
+          sessionOptions(session),
+        );
+      } catch (error) {
+        if (!session) {
+          // Sin transaccion se revierte a mano lo ya escrito.
+          try {
+            if (doctorErased)
+              await Doctor.updateOne(
+                { _id: doctor._id },
+                restoreUpdate(
+                  Object.fromEntries(
+                    erasedFields.map((key) => [key, doctorBefore[key]]),
+                  ),
+                ),
+              );
+            if (applicationDeleted)
+              await MedicalApplication.collection.insertOne(applicationBefore);
+          } catch (revertError) {
+            console.error("No se pudo revertir el borrado.", revertError);
+          }
+        }
+        throw error;
+      }
     });
     request.app
       .get("io")

@@ -1,19 +1,21 @@
 const clients = new Map();
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 12;
+const READ_MAX_REQUESTS = 60;
 const MAX_CLIENTS = 10_000;
 const PRUNE_INTERVAL_MS = 30_000;
 let lastPrunedAt = 0;
 
 const pruneExpired = (now) => {
-  if (now - lastPrunedAt < PRUNE_INTERVAL_MS && clients.size < MAX_CLIENTS) return;
+  if (now - lastPrunedAt < PRUNE_INTERVAL_MS && clients.size < MAX_CLIENTS)
+    return;
   lastPrunedAt = now;
   for (const [key, record] of clients) {
     if (now - record.startedAt >= WINDOW_MS) clients.delete(key);
   }
 };
 
-export function interactionRateLimit(request, response, next) {
+const createRateLimit = (maxRequests) => (request, response, next) => {
   const now = Date.now();
   pruneExpired(now);
   const identity = request.user?.id || request.ip || "unknown";
@@ -21,7 +23,7 @@ export function interactionRateLimit(request, response, next) {
   const record = clients.get(key);
   if (!record || now - record.startedAt >= WINDOW_MS) {
     if (!record && clients.size >= MAX_CLIENTS) {
-      response.set("X-RateLimit-Limit", String(MAX_REQUESTS));
+      response.set("X-RateLimit-Limit", String(maxRequests));
       response.set("X-RateLimit-Remaining", "0");
       response.set("Retry-After", "60");
       return response.status(429).json({
@@ -30,12 +32,12 @@ export function interactionRateLimit(request, response, next) {
       });
     }
     clients.set(key, { count: 1, startedAt: now });
-    response.set("X-RateLimit-Limit", String(MAX_REQUESTS));
-    response.set("X-RateLimit-Remaining", String(MAX_REQUESTS - 1));
+    response.set("X-RateLimit-Limit", String(maxRequests));
+    response.set("X-RateLimit-Remaining", String(maxRequests - 1));
     return next();
   }
-  if (record.count >= MAX_REQUESTS) {
-    response.set("X-RateLimit-Limit", String(MAX_REQUESTS));
+  if (record.count >= maxRequests) {
+    response.set("X-RateLimit-Limit", String(maxRequests));
     response.set("X-RateLimit-Remaining", "0");
     response.set(
       "Retry-After",
@@ -47,7 +49,11 @@ export function interactionRateLimit(request, response, next) {
     });
   }
   record.count += 1;
-  response.set("X-RateLimit-Limit", String(MAX_REQUESTS));
-  response.set("X-RateLimit-Remaining", String(MAX_REQUESTS - record.count));
+  response.set("X-RateLimit-Limit", String(maxRequests));
+  response.set("X-RateLimit-Remaining", String(maxRequests - record.count));
   return next();
-}
+};
+
+export const interactionRateLimit = createRateLimit(MAX_REQUESTS);
+// Lecturas publicas: limite mas amplio, pero con tope.
+export const readRateLimit = createRateLimit(READ_MAX_REQUESTS);

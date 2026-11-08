@@ -7,7 +7,7 @@
       name="description"
       content="Encuentra especialistas, compara información y agenda atención médica con claridad."
     />
-    <meta name="theme-color" content="#f4f5f3" />
+    <meta name="theme-color" content="#e9efeb" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script>
       (() => {
@@ -18,7 +18,9 @@
           // sin storage, queda el tema claro.
         }
         const theme = saved === "dark" || saved === "light" ? saved : "light";
-        const color = theme === "dark" ? "#111315" : "#f4f5f3";
+        // Mismo par que Header.jsx y --canvas en App.css: el fondo no debe
+        // cambiar de tono al cargar.
+        const color = theme === "dark" ? "#121a1e" : "#e9efeb";
         document.documentElement.dataset.theme = theme;
         document.querySelector('meta[name="theme-color"]').content = color;
       })();
@@ -27,7 +29,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script src="https://accounts.google.com/gsi/client" async></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

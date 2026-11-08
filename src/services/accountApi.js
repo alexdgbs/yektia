@@ -1,4 +1,5 @@
-import { API_URL, apiRequest } from "./apiConfig";
+import { apiRequest, apiRequestBlob } from "./apiConfig";
+import { doctorsApi } from "./doctorsApi";
 
 function upload(path, file) {
   return apiRequest(path, {
@@ -18,8 +19,7 @@ export const accountApi = {
       body: JSON.stringify({ credential }),
     }),
   me: () => apiRequest("/auth/me"),
-  socketTicket: () =>
-    apiRequest("/auth/socket-ticket", { method: "POST" }),
+  socketTicket: () => apiRequest("/auth/socket-ticket", { method: "POST" }),
   updateMe: (payload) =>
     apiRequest("/auth/me", { method: "PATCH", body: JSON.stringify(payload) }),
   syncFavorites: (doctorIds) =>
@@ -46,7 +46,8 @@ export const accountApi = {
       method: "PATCH",
       body: JSON.stringify({ status }),
     }),
-  doctorProfile: (id) => apiRequest(`/medicos/${id}`),
+  // Mismo perfil que doctorsApi.get: una sola llamada para el mismo dato.
+  doctorProfile: (id) => doctorsApi.get(id),
   updateDoctorProfile: (payload) =>
     apiRequest("/medicos/me/profile", {
       method: "PATCH",
@@ -88,17 +89,10 @@ export const accountApi = {
     }),
   applicationAudit: (id) => apiRequest(`/medical-applications/${id}/audit`),
   openMedicalDocument: async (applicationId, documentId) => {
-    if (!API_URL) {
-      throw new Error(
-        "Configura VITE_API_REST con la URL pública del backend de Yektia.",
-      );
-    }
-    const response = await fetch(
-      `${API_URL}/medical-applications/${applicationId}/documents/${documentId}`,
-      { credentials: "include" },
+    const blob = await apiRequestBlob(
+      `/medical-applications/${applicationId}/documents/${documentId}`,
     );
-    if (!response.ok) throw new Error("No fue posible abrir el documento");
-    const url = URL.createObjectURL(await response.blob());
+    const url = URL.createObjectURL(blob);
     window.open(url, "_blank", "noopener,noreferrer");
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   },

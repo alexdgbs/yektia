@@ -8,12 +8,19 @@ export const sessionTokenFromCookie = (header = "") => {
       .split(";")
       .map((part) => part.trim().split("="))
       .filter(([key, value]) => key && value)
-      .map(([key, value]) => [key, decodeURIComponent(value)]),
+      .map(([key, value]) => {
+        try {
+          return [key, decodeURIComponent(value)];
+        } catch {
+          return [key, value];
+        }
+      }),
   );
   return (
     cookies["__Host-yektia_session"] ||
     cookies.yektia_session ||
-    // las sesiones de antes del cambio de nombre siguen válidas.
+    // Retirar el 2026-11-13: ese día vence la última sesión creada antes
+    // del cambio de nombre (las sesiones duran 7 días).
     cookies["__Host-caresync_session"] ||
     cookies.caresync_session ||
     ""
@@ -97,10 +104,9 @@ export async function requireAuth(request, response, next) {
         (error) => console.error("No se pudo actualizar lastSeenAt.", error),
       );
     return next();
-  } catch {
-    return response
-      .status(401)
-      .json({ message: "Sesión vencida o inválida", requestId: request.id });
+  } catch (error) {
+    // Un error de BD no es una sesion invalida: es un 500.
+    return next(error);
   }
 }
 
@@ -119,8 +125,8 @@ export async function optionalAuth(request, _response, next) {
       request.sessionId = session._id;
     }
     return next();
-  } catch {
-    return next();
+  } catch (error) {
+    return next(error);
   }
 }
 

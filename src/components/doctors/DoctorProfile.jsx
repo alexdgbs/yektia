@@ -14,6 +14,8 @@ import {
   doctorPrice,
   doctorRating,
   formatDate,
+  isOwnDoctorProfile,
+  isPriceMissing,
 } from "./doctorPresentation";
 import { getAccountKey } from "../../hooks/useAuth";
 import AppointmentPicker from "../appointments/AppointmentPicker";
@@ -202,7 +204,7 @@ export default function DoctorProfile({
   };
   const initials = doctorInitials(doctor.nombre);
   const { count: ratingCount, average } = doctorRating(doctor);
-  const isOwnProfile = String(auth.user?.doctorId || "") === String(doctor._id);
+  const isOwnProfile = isOwnDoctorProfile(auth.user, doctor);
   const openAccount = () => {
     onNavigate?.("/cuenta");
   };
@@ -329,22 +331,18 @@ export default function DoctorProfile({
             <FiMapPin aria-hidden="true" />
             <span>{doctor.ubicacion || "Ubicación por confirmar"}</span>
           </div>
-          <div className="profile-rating">
-            <RatingStars value={average} />
-            <span>
-              {ratingCount
-                ? `${ratingCount} ${ratingCount === 1 ? "valoración" : "valoraciones"}`
-                : "Aún sin valoraciones"}
-            </span>
-          </div>
+          {ratingCount > 0 && (
+            <div className="profile-rating">
+              <RatingStars value={average} />
+              <span>
+                {`${ratingCount} ${ratingCount === 1 ? "valoración" : "valoraciones"}`}
+              </span>
+            </div>
+          )}
           <div className="profile-price">
             <span>Consulta particular</span>
             <strong
-              className={
-                doctor.precio === "" || doctor.precio == null
-                  ? "is-pending"
-                  : ""
-              }
+              className={isPriceMissing(doctor.precio) ? "is-pending" : ""}
             >
               {doctorPrice(doctor)}
             </strong>
@@ -432,10 +430,6 @@ export default function DoctorProfile({
         >
           <h2 id="professional-summary-title">Información profesional</h2>
           <dl className="professional-details">
-            <div>
-              <dt>Cédula profesional</dt>
-              <dd>{doctor.cedula || "No disponible"}</dd>
-            </div>
             <div>
               <dt>Idiomas</dt>
               <dd>

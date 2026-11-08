@@ -1115,6 +1115,10 @@ select:focus-visible {
   grid-template-columns: 1fr 1fr 135px 135px;
   align-items: end;
 }
+/* El botón de quitar rango va debajo de los 4 campos, a todo lo ancho. */
+.schedule-rule > button {
+  grid-column: 1 / -1;
+}
 .schedule-rule > button,
 .blocked-dates button {
   border: 1px solid var(--line);

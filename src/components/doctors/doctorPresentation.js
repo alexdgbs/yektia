@@ -2,21 +2,33 @@ import { formatDate } from "../../utils/dates";
 
 export { formatDate };
 
+// El título ("Dra.", "Dr.") no forma parte del nombre para mostrar.
+const TITLE_PREFIX = /^(Dra?\.)\s/;
+const stripDoctorTitle = (name = "") => String(name).replace(TITLE_PREFIX, "");
+
 // Primer nombre sin el título: "Dra. Ana Sofía" -> "Ana".
 export function doctorFirstName(name = "") {
-  return name
-    .replace(/^(Dra?\.)\s/, "")
-    .split(" ")
-    .filter(Boolean)[0];
+  return stripDoctorTitle(name).split(" ").filter(Boolean)[0];
 }
 
-export function doctorInitials(name) {
-  return name
-    .replace(/^(Dra?\.)\s/, "")
+export function doctorInitials(name = "") {
+  return stripDoctorTitle(name)
     .split(" ")
+    .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0])
     .join("");
+}
+
+// El usuario es el dueño del perfil cuando su cuenta apunta a ese doctor.
+export function isOwnDoctorProfile(user, doctor) {
+  if (!user?.doctorId || !doctor?._id) return false;
+  return String(user.doctorId) === String(doctor._id);
+}
+
+// Precio sin capturar: cadena vacía, nulo o indefinido.
+export function isPriceMissing(price) {
+  return price === "" || price == null;
 }
 
 export function formatDuration(minutes) {
@@ -35,7 +47,7 @@ export function doctorRating(doctor) {
 }
 
 export function doctorPrice(doctor, fallback = "Por confirmar") {
-  if (doctor.precio === "" || doctor.precio == null) return fallback;
+  if (isPriceMissing(doctor.precio)) return fallback;
   const price = Number(doctor.precio);
   if (price === 0) return "Sin costo";
   return new Intl.NumberFormat("es-MX", {
@@ -45,20 +57,5 @@ export function doctorPrice(doctor, fallback = "Por confirmar") {
   }).format(price);
 }
 
-// Sin tildes y en minúsculas, para comparar texto sin importar acentos.
-const normalizeText = (value = "") =>
-  value
-    .toLocaleLowerCase("es")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-// Cada palabra buscada debe coincidir con el inicio de una palabra del
-// perfil: "ana" encuentra a Ana, pero no a Mariana.
-export function matchesDoctorQuery(doctor, query = "") {
-  const words = normalizeText(query).split(/\s+/).filter(Boolean);
-  if (!words.length) return true;
-  const haystack = normalizeText(
-    `${doctor.nombre || ""} ${doctor.especialidad || ""} ${doctor.ubicacion || ""}`,
-  ).split(/\s+/);
-  return words.every((word) => haystack.some((item) => item.startsWith(word)));
-}
+// La búsqueda vive en shared/ para que el backend use la misma.
+export { matchesDoctorQuery } from "../../../shared/index.js";
