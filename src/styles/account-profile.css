@@ -97,11 +97,88 @@
   padding: 38px 0 64px;
 }
 
-.dashboard-header {
+/* Cuenta con barra lateral, como el panel de referencia. */
+.account-shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.account-sidebar {
+  position: sticky;
+  top: 102px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
+}
+
+.account-sidebar__nav {
+  display: grid;
+  gap: 2px;
+}
+
+.account-sidebar__nav button,
+.account-sidebar__logout {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-sidebar__nav button:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+
+.account-sidebar__nav button[aria-current="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.account-sidebar__logout {
+  color: var(--danger);
+}
+
+.account-sidebar__logout:hover {
+  background: var(--soft);
+}
+
+.account-main {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.account-main .login-notice {
+  margin: 0;
+}
+
+.account-main .appointments-list {
+  margin-top: 0;
+}
+
+.account-section {
+  min-width: 0;
+  display: grid;
+}
+
+.account-profile-card {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 28px;
+  align-items: center;
+  gap: 18px;
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -109,99 +186,144 @@
   box-shadow: var(--shadow-card);
 }
 
-.dashboard-header__copy {
-  display: grid;
-  gap: 6px;
-  align-content: start;
-  min-width: 0;
-}
-
-.dashboard h1 {
-  max-width: 900px;
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(32px, 4vw, 46px);
-  font-weight: 620;
-  line-height: 1.04;
-  letter-spacing: -0.055em;
-}
-
-.dashboard-header__copy > p {
-  max-width: 540px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.65;
-}
-
-.dashboard-header__actions {
-  display: flex;
+.account-avatar {
   flex: 0 0 auto;
-  align-items: center;
-  gap: 10px;
-}
-
-.dashboard-session {
   display: grid;
-  justify-items: start;
-  gap: 5px;
-  max-width: 250px;
-  padding: 0 13px;
-  border-left: 1px solid var(--line-strong);
-  color: var(--muted);
-  text-align: left;
-}
-
-.dashboard-session__label {
-  font-size: var(--text-meta);
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
-.dashboard-session strong {
+.account-profile-card__copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.account-profile-card h1 {
+  margin: 0;
   color: var(--ink);
-  font-size: var(--text-caption);
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 620;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  overflow-wrap: break-word;
+}
+
+.account-profile-card__copy > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-small);
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
 
-.dashboard-grid {
+.account-profile-card__hint {
+  max-width: 520px;
+}
+
+.account-quick {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.account-quick button {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease;
+}
+
+.account-quick button:hover {
+  transform: translateY(-2px);
+}
+
+.account-quick__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--green);
+}
+
+.account-quick__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.account-quick strong {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.account-quick button > span:last-child {
+  color: var(--muted);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.account-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 18px;
-  margin-top: 18px;
-  align-items: start;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
 }
 
-.dashboard-grid--single {
-  grid-template-columns: 1fr;
+.account-next > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
 }
 
-.dashboard-grid--patient {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "settings application"
-    "appointments application";
+.account-next h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
 }
 
-.dashboard-grid--patient > .account-settings-panel {
-  grid-area: settings;
+.account-next p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-small);
+  line-height: 1.55;
 }
 
-.dashboard-grid--patient > .application-panel {
-  grid-area: application;
-}
-
-.dashboard-grid--patient > .appointments-list {
-  grid-area: appointments;
-  margin-top: 0;
+.account-next .primary-button,
+.account-next .secondary-button {
+  flex: 0 0 auto;
 }
 
 .settings-panel,
 .application-panel,
-.application-summary,
-.dashboard-professional-stack > .settings-panel {
+.application-summary {
   margin: 0;
   padding: 24px;
   border: 1px solid var(--line);
@@ -644,12 +766,6 @@
   background: color-mix(in srgb, var(--green) 9%, transparent);
   color: var(--ink);
   font-size: 12px;
-}
-
-.dashboard-professional-stack {
-  display: grid;
-  gap: 18px;
-  margin-top: 18px;
 }
 
 .appointments-list {
@@ -1172,19 +1288,42 @@
     width: min(500px, 100%);
   }
 
-  .dashboard-grid {
-    grid-template-columns: 1fr;
+  .account-shell {
+    grid-template-columns: 200px minmax(0, 1fr);
   }
+}
 
-  .dashboard-grid--patient {
+/* La barra lateral pasa arriba, en una fila con scroll horizontal. */
+@media (max-width: 900px) {
+  .account-shell {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: none;
   }
 
-  .dashboard-grid--patient > .account-settings-panel,
-  .dashboard-grid--patient > .application-panel,
-  .dashboard-grid--patient > .appointments-list {
-    grid-area: auto;
+  .account-sidebar {
+    position: static;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .account-sidebar__nav {
+    display: flex;
+    flex: 1;
+    gap: 2px;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .account-sidebar__nav button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .account-sidebar__logout {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 }
 
@@ -1202,25 +1341,21 @@
     padding: 28px 0 48px;
   }
 
-  .dashboard-header {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 20px;
+  .account-profile-card {
+    flex-wrap: wrap;
     padding: 22px;
   }
 
-  .dashboard-header__actions {
-    align-items: stretch;
-    flex-direction: column;
+  .account-profile-card .secondary-button {
+    width: 100%;
   }
 
-  .dashboard-session {
-    max-width: none;
-    padding: 0;
-    border-left: 0;
+  .account-next {
+    flex-wrap: wrap;
   }
 
-  .dashboard-header__actions .primary-button {
+  .account-next .primary-button,
+  .account-next .secondary-button {
     width: 100%;
   }
 
@@ -1267,9 +1402,24 @@
   .settings-panel,
   .application-panel,
   .appointments-list,
-  .dashboard-professional-stack > .settings-panel {
+  .account-profile-card,
+  .account-next {
     padding: 20px;
     border-radius: 20px;
+  }
+
+  .account-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+
+  .account-profile-card h1 {
+    font-size: 24px;
+  }
+
+  .account-quick {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 
   .google-auth-panel h2,
@@ -1382,20 +1532,21 @@
 
 @media (max-width: 390px) {
   .account-auth h1,
-  .dashboard h1 {
-    font-size: 34px;
+  .account-profile-card h1 {
+    font-size: 24px;
   }
 
   .google-auth-panel,
   .settings-panel,
   .application-panel,
   .appointments-list,
-  .dashboard-professional-stack > .settings-panel {
+  .account-profile-card,
+  .account-next {
     padding: 18px;
   }
 
-  .dashboard-grid--patient > .appointments-list {
-    padding: 18px;
+  .account-quick {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .selected-date .slot-list {
