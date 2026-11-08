@@ -233,7 +233,7 @@ function Dashboard({ auth, onNavigate }) {
                 <FiSearch />
               </span>
               <strong>Agendar consulta</strong>
-              <span>Busca especialistas y reserva</span>
+              <span>Busca especialistas y reserva tu cita</span>
             </button>
             <button type="button" onClick={() => scrollToSection("consultas")}>
               <span className="account-quick__icon" aria-hidden="true">

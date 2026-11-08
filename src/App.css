@@ -105,6 +105,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: clip;
   background: var(--canvas);
   color: var(--ink);
 }
@@ -156,6 +157,19 @@ button:disabled {
   border-radius: 28px;
   background: var(--page);
   box-shadow: var(--shadow);
+}
+
+/* Banda fija tras la cabecera flotante: tapa el contenido que sube al hacer scroll, para que ningún botón quede cortado a la mitad arriba. */
+.app-frame::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: 84px;
+  background: var(--page);
+  pointer-events: none;
 }
 
 .app-main {

@@ -1293,7 +1293,7 @@
   }
 }
 
-/* La barra lateral pasa arriba, en una fila con scroll horizontal. */
+/* La barra lateral pasa arriba, en filas que se ajustan sin cortar texto. */
 @media (max-width: 900px) {
   .account-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -1302,6 +1302,7 @@
   .account-sidebar {
     position: static;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 4px;
     padding: 8px;
@@ -1311,9 +1312,9 @@
   .account-sidebar__nav {
     display: flex;
     flex: 1;
+    flex-wrap: wrap;
     gap: 2px;
     min-width: 0;
-    overflow-x: auto;
   }
 
   .account-sidebar__nav button {
