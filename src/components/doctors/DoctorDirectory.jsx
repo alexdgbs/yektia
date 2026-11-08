@@ -260,6 +260,18 @@ export default function DoctorDirectory({
                     {specialty}
                   </button>
                 ))}
+                {loading &&
+                  // Píldoras sin texto, del ancho de las especialidades,
+                  // para que la fila no crezca al llegar los perfiles.
+                  ["w110", "w130", "w125", "w95", "w110b", "w150"].map(
+                    (size) => (
+                      <span
+                        key={size}
+                        className={`skeleton-line skeleton-chip skeleton-chip--${size}`}
+                        aria-hidden="true"
+                      />
+                    ),
+                  )}
               </nav>
             </section>
 
@@ -321,43 +333,62 @@ export default function DoctorDirectory({
             className="feed-rail feed-rail--right"
             aria-label="Especialistas sugeridos y criterios de atención"
           >
-            {suggestions.length >= 2 && (
-              <section className="feed-rail-card">
+            {loading ? (
+              <section className="feed-rail-card" aria-hidden="true">
                 <header>
-                  <h3>Otros especialistas</h3>
+                  <span className="skeleton-line skeleton-rail-title" />
                 </header>
                 <div className="feed-suggest-list">
-                  {suggestions.map((doctor) => (
-                    <button
-                      className="feed-suggest-item"
-                      key={doctor._id}
-                      type="button"
-                      onClick={() => onSelectDoctor(doctor)}
-                      aria-label={`Ver el perfil de ${doctor.nombre}`}
-                    >
-                      <span className="feed-suggest-avatar" aria-hidden="true">
-                        <strong>
-                          {doctorInitials(doctor.nombre).toLocaleUpperCase(
-                            "es",
-                          ) || "E"}
-                        </strong>
-                        {doctor.imagen && (
-                          <img
-                            src={doctor.imagen}
-                            alt=""
-                            loading="lazy"
-                            onError={(event) => event.currentTarget.remove()}
-                          />
-                        )}
-                      </span>
+                  {Array.from({ length: 5 }, (_, index) => (
+                    <div className="feed-suggest-item" key={index}>
+                      <span className="feed-suggest-avatar skeleton-line" />
                       <span className="feed-suggest-item__copy">
-                        <strong>{doctor.nombre}</strong>
-                        <small>{doctor.especialidad || "Especialista"}</small>
+                        <span className="skeleton-line skeleton-suggest-name" />
+                        <span className="skeleton-line skeleton-suggest-spec" />
                       </span>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </section>
+            ) : (
+              suggestions.length >= 2 && (
+                <section className="feed-rail-card">
+                  <header>
+                    <h3>Otros especialistas</h3>
+                  </header>
+                  <div className="feed-suggest-list">
+                    {suggestions.map((doctor) => (
+                      <button
+                        className="feed-suggest-item"
+                        key={doctor._id}
+                        type="button"
+                        onClick={() => onSelectDoctor(doctor)}
+                        aria-label={`Ver el perfil de ${doctor.nombre}`}
+                      >
+                        <span className="feed-suggest-avatar" aria-hidden="true">
+                          <strong>
+                            {doctorInitials(doctor.nombre).toLocaleUpperCase(
+                              "es",
+                            ) || "E"}
+                          </strong>
+                          {doctor.imagen && (
+                            <img
+                              src={doctor.imagen}
+                              alt=""
+                              loading="lazy"
+                              onError={(event) => event.currentTarget.remove()}
+                            />
+                          )}
+                        </span>
+                        <span className="feed-suggest-item__copy">
+                          <strong>{doctor.nombre}</strong>
+                          <small>{doctor.especialidad || "Especialista"}</small>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )
             )}
 
             <section className="feed-rail-card feed-trust-card">

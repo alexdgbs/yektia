@@ -314,11 +314,7 @@ function Dashboard({ auth, onNavigate }) {
 
 export default function AccountPage({ auth, onNavigate }) {
   if (auth.loading) {
-    return (
-      <div className="page-width">
-        <LoadingSkeleton label="Cargando tu cuenta" />
-      </div>
-    );
+    return <LoadingSkeleton variant="account" label="Cargando tu cuenta" />;
   }
 
   return auth.user ? (
