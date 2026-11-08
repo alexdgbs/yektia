@@ -215,18 +215,13 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
+/* Encabezado plano, sin cuadro: la píldora con fondo y borde no va. */
 .site-header {
   position: sticky;
   top: 10px;
   z-index: 50;
-  background: var(--glass);
-  backdrop-filter: saturate(150%) blur(16px);
-  -webkit-backdrop-filter: saturate(150%) blur(16px);
   width: min(1230px, calc(100% - 32px));
   margin: 10px auto 0;
-  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-  border-radius: 999px;
-  box-shadow: var(--shadow-header);
 }
 
 .site-header.is-menu-open {
@@ -295,10 +290,6 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-/* La luna va con las acciones, a la derecha, también en escritorio. */
-.theme-toggle {
   margin-left: auto;
 }
 
@@ -373,9 +364,8 @@ select:focus-visible {
   width: 40px;
   height: 40px;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  border: 0;
+  background: transparent;
   color: var(--muted);
   cursor: pointer;
 }
@@ -387,8 +377,7 @@ select:focus-visible {
 .theme-toggle:hover,
 .mobile-menu-toggle:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--ink) 18%, var(--line));
-  background: var(--panel);
+  background: transparent;
   color: var(--ink);
 }
 
@@ -702,6 +691,15 @@ select:focus-visible {
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
+}
+
+/* Botón redondo de solo icono: cerrar (X), descartar, etc. */
+:where(button:not([class]):has(> svg:only-child)) {
+  width: 34px;
+  height: 34px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
 }
 
 /* :root:root sube la especificidad por encima de feed-experience.css. */
