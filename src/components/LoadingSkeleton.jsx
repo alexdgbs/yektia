@@ -1,5 +1,9 @@
-﻿function Line({ size = "" }) {
-  return <span className={`skeleton-line ${size}`} />;
+function Line({ size = "", extra = false }) {
+  return (
+    <span
+      className={`skeleton-line ${size}${extra ? " skeleton-line--extra" : ""}`}
+    />
+  );
 }
 function Copy({ title = false }) {
   return (
@@ -22,24 +26,52 @@ function Fields({ count = 4 }) {
     </div>
   );
 }
-function Slots() {
+// Esqueleto con la forma del calendario de disponibilidad: barra, meses
+// con su rejilla de días y leyenda. En móvil solo se ve un mes, igual que
+// el calendario real (1 mes si el ancho es de 620px o menos).
+function CalendarSkeleton() {
   return (
-    <div className="skeleton-content">
-      <div className="skeleton-slot-days">
-        {Array.from({ length: 4 }, (_, index) => (
-          <div key={index}>
-            <Line />
-            <Line size="short" />
-          </div>
+    <div className="appointment-calendar" aria-hidden="true">
+      <div className="appointment-calendar__toolbar">
+        <div>
+          <span className="skeleton-line skeleton-calendar-eyebrow" />
+          <span className="skeleton-line skeleton-calendar-title" />
+        </div>
+        <div className="appointment-calendar__navigation">
+          <span className="skeleton-line skeleton-calendar-nav" />
+          <span className="skeleton-line skeleton-calendar-nav" />
+        </div>
+      </div>
+      <div className="appointment-calendar__months">
+        {Array.from({ length: 2 }, (_, month) => (
+          <section className="appointment-month" key={month}>
+            <span className="skeleton-line skeleton-month-title" />
+            <div className="appointment-month__weekdays">
+              {Array.from({ length: 7 }, (_, index) => (
+                <span
+                  key={index}
+                  className="skeleton-line skeleton-weekday"
+                />
+              ))}
+            </div>
+            <div className="appointment-month__days">
+              {Array.from({ length: 42 }, (_, index) => (
+                <span
+                  key={index}
+                  className="appointment-day appointment-day--skeleton"
+                >
+                  <span className="skeleton-line skeleton-day-num" />
+                  <span className="skeleton-line skeleton-day-count" />
+                </span>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
-      <Line size="short" />
-      <div className="skeleton-slot-times">
-        {Array.from({ length: 6 }, (_, index) => (
-          <Line key={index} size="control" />
-        ))}
+      <div className="appointment-calendar__legend">
+        <span className="skeleton-line skeleton-legend" />
+        <span className="skeleton-line skeleton-legend" />
       </div>
-      <Line size="control" />
     </div>
   );
 }
@@ -63,6 +95,7 @@ export default function LoadingSkeleton({
                 <Line size="title" />
                 <Line size="short" />
                 <Line size="short" />
+                <Line size="short" extra />
               </div>
             </header>
             <div className="feed-post__body">
@@ -70,10 +103,13 @@ export default function LoadingSkeleton({
                 <Line />
                 <Line />
                 <Line size="short" />
+                <Line size="short" extra />
               </div>
               <div className="feed-post__summary">
-                <div><Line size="short" /><Line size="control" /></div>
-                <div><Line size="short" /><Line size="control" /></div>
+                <div>
+                  <Line size="short" />
+                  <Line size="control" />
+                </div>
               </div>
             </div>
             <div className="feed-post__actions">
@@ -117,7 +153,7 @@ export default function LoadingSkeleton({
       </div>
     );
   } else if (variant === "slots") {
-    content = <Slots />;
+    content = <CalendarSkeleton />;
   } else if (variant === "profile") {
     content = (
       <div className="profile-card profile-card--profile">
@@ -126,24 +162,18 @@ export default function LoadingSkeleton({
           <div className="profile-title">
             <div className="profile-badges">
               <Line size="short" />
-              <Line size="short" />
             </div>
-            <Copy title />
-            <section className="professional-summary" aria-hidden="true">
+            <div className="skeleton-copy">
+              <Line size="title" />
+              <Line />
               <Line size="short" />
-              <div className="professional-details">
-                {Array.from({ length: 5 }, (_, index) => (
-                  <div key={index}>
-                    <Line size="short" />
-                    <Line size="short" />
-                  </div>
-                ))}
-              </div>
-            </section>
+              <Line extra />
+            </div>
             <div className="profile-meta-line">
               <Line size="short" />
+              <Line size="short" extra />
             </div>
-            <div className="profile-rating">
+            <div className="profile-price">
               <Line size="short" />
               <Line size="short" />
             </div>
@@ -153,14 +183,54 @@ export default function LoadingSkeleton({
               <Line size="control" />
             </div>
           </div>
+          <section className="professional-summary" aria-hidden="true">
+            <Line size="short" />
+            <div className="professional-details">
+              {Array.from({ length: 5 }, (_, index) => (
+                <div key={index}>
+                  <Line size="short" />
+                  <Line size="short" />
+                </div>
+              ))}
+            </div>
+          </section>
         </header>
         <div className="profile-body">
-          <aside className="appointment-brief">
-            <Copy title />
-            <Slots />
-          </aside>
           <section className="patient-voice">
             <Copy title />
+          </section>
+        </div>
+      </div>
+    );
+  } else if (variant === "account") {
+    content = (
+      <div className="dashboard account-shell page-width">
+        <aside className="account-sidebar" aria-hidden="true">
+          <nav className="account-sidebar__nav">
+            {Array.from({ length: 7 }, (_, index) => (
+              <span key={index} className="skeleton-line skeleton-nav-item" />
+            ))}
+          </nav>
+          <span className="skeleton-line skeleton-nav-item" />
+        </aside>
+        <div className="account-main">
+          <section className="account-profile-card">
+            <span className="account-profile-avatar skeleton-line" />
+            <div className="account-profile-card__copy">
+              <Line size="short" />
+              <Line size="title" />
+              <Line />
+              <Line size="short" />
+            </div>
+            <Line size="control" />
+          </section>
+          <section className="account-next">
+            <div>
+              <Line size="short" />
+              <Line size="title" />
+              <Line />
+            </div>
+            <Line size="control" />
           </section>
         </div>
       </div>

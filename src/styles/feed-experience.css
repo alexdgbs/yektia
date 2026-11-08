@@ -828,9 +828,14 @@
   pointer-events: none;
 }
 
+.feed-post--skeleton .feed-post__eyebrow-row {
+  min-height: 0;
+  padding: 14px 16px 0;
+}
+
 .feed-post--skeleton .feed-post__eyebrow-row > .skeleton-line {
   width: 124px;
-  height: 9px;
+  height: 13px;
 }
 
 .feed-post--skeleton .feed-doctor-avatar.skeleton-line {
@@ -840,12 +845,12 @@
 
 .feed-post--skeleton .feed-post__identity .skeleton-line {
   width: min(230px, 72%);
-  height: 10px;
+  height: 17px;
 }
 
 .feed-post--skeleton .feed-post__identity .skeleton-line.title {
   width: min(190px, 62%);
-  height: 13px;
+  height: 17px;
 }
 
 .feed-post--skeleton .feed-post__body .skeleton-copy {
@@ -854,7 +859,7 @@
 }
 
 .feed-post--skeleton .feed-post__body .skeleton-line {
-  height: 9px;
+  height: 10px;
 }
 
 .feed-post--skeleton .feed-post__body .skeleton-line.short {
@@ -866,24 +871,28 @@
   gap: 8px;
 }
 
+.feed-post--skeleton .feed-post__summary > div:only-child {
+  grid-column: 2;
+}
+
 .feed-post--skeleton .feed-post__summary .skeleton-line {
-  height: 8px;
+  height: 12px;
 }
 
 .feed-post--skeleton .feed-post__summary .skeleton-line.control {
   width: 64px;
-  height: 15px;
+  height: 19px;
 }
 
 .feed-post--skeleton .feed-post__actions {
   display: flex;
-  gap: 10px;
-  padding: 11px 16px 14px;
+  gap: 8px;
+  padding: 0 16px 15px;
 }
 
 .feed-post--skeleton .feed-post__actions .skeleton-line {
   flex: 1 1 0;
-  height: 34px;
+  height: 38px;
 }
 
 @keyframes profile-panel-in {
@@ -974,8 +983,8 @@
 }
 
 .doctor-modal__loading {
-  width: min(calc(100% - 32px), 820px);
-  margin: 22px auto;
+  width: 100%;
+  margin: 0;
 }
 
 .profile-card.profile-card--profile {
@@ -1255,15 +1264,20 @@
 }
 
 .skeleton-loading--profile .profile-quick-actions .skeleton-line.control {
-  flex: 0 0 42px;
-  width: 42px;
+  width: 120px;
+  height: 42px;
 }
 
 .skeleton-loading--profile
   .profile-quick-actions
   .skeleton-line.control:nth-child(2) {
-  flex-basis: 170px;
-  width: 170px;
+  width: 100%;
+}
+
+.skeleton-loading--profile
+  .profile-quick-actions
+  .skeleton-line.control:nth-child(3) {
+  width: 150px;
 }
 
 .appointment-brief {
@@ -2086,6 +2100,19 @@
     font-size: var(--text-caption);
   }
 
+  /* El esqueleto apila sus botones igual que la tarjeta real. */
+  .feed-post--skeleton .feed-post__actions {
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px 14px;
+  }
+
+  .feed-post--skeleton .feed-post__actions .skeleton-line {
+    flex: none;
+    width: 100%;
+    height: 44px;
+  }
+
   .feed-post__actions button svg {
     width: 15px;
     height: 15px;
@@ -2190,9 +2217,15 @@
 
   .skeleton-loading--profile
     .profile-quick-actions
-    .skeleton-line.control:nth-child(2) {
-    width: 100%;
-    flex-basis: auto;
+    .skeleton-line.control,
+  .skeleton-loading--profile
+    .profile-quick-actions
+    .skeleton-line.control:nth-child(2),
+  .skeleton-loading--profile
+    .profile-quick-actions
+    .skeleton-line.control:nth-child(3) {
+    width: 42px;
+    height: 40px;
   }
 
   .profile-quick-action {

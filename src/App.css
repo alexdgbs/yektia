@@ -514,8 +514,7 @@ select:focus-visible {
   width: 110px;
 }
 .skeleton-loading .profile-monogram {
-  min-height: 150px;
-  border-radius: 12px;
+  border-radius: 50%;
   background: var(--soft);
 }
 .skeleton-slot-days {
@@ -553,6 +552,261 @@ select:focus-visible {
 .skeleton-loading .admin-layout aside > div {
   padding: 20px 8px;
   border-bottom: 1px solid var(--line);
+}
+/* Líneas que solo existen en móvil, donde el texto real se parte en dos. */
+.skeleton-line--extra {
+  display: none;
+}
+@media (max-width: 560px) {
+  .skeleton-line--extra {
+    display: block;
+  }
+}
+/* Esqueleto con la forma del calendario: barra, meses y leyenda. */
+.skeleton-calendar-eyebrow {
+  width: 110px;
+  height: 10px;
+}
+.skeleton-calendar-title {
+  width: 150px;
+  height: 20px;
+}
+.skeleton-calendar-nav {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+}
+.skeleton-month-title {
+  width: 140px;
+  height: 14px;
+  margin: 2px auto 10px;
+}
+.skeleton-loading--slots .appointment-month__weekdays .skeleton-line {
+  width: 60%;
+  height: 8px;
+  justify-self: center;
+}
+.appointment-day--skeleton {
+  min-height: 52px;
+  cursor: default;
+}
+.skeleton-day-num {
+  width: 16px;
+  height: 14px;
+}
+.skeleton-day-count {
+  width: 30px;
+  height: 9px;
+}
+.skeleton-legend {
+  width: 90px;
+  height: 10px;
+}
+@media (max-width: 620px) {
+  .skeleton-loading--slots .appointment-calendar__months {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .skeleton-loading--slots .appointment-month:nth-child(2) {
+    display: none;
+  }
+  .appointment-day--skeleton {
+    min-height: 48px;
+  }
+}
+/* Píldoras sin texto en los filtros mientras cargan los perfiles. */
+.feed-categories .skeleton-chip {
+  min-height: 33px;
+  border-radius: 999px;
+}
+.skeleton-chip--w110,
+.skeleton-chip--w110b {
+  width: 110px;
+}
+.skeleton-chip--w130 {
+  width: 130px;
+}
+.skeleton-chip--w125 {
+  width: 125px;
+}
+.skeleton-chip--w95 {
+  width: 95px;
+}
+.skeleton-chip--w150 {
+  width: 150px;
+}
+@media (max-width: 680px) {
+  .feed-categories .skeleton-chip {
+    width: 100%;
+    min-height: 32px;
+  }
+  .feed-categories .skeleton-chip:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+/* Sugerencias del riel derecho mientras cargan los perfiles. */
+.skeleton-rail-title {
+  width: 150px;
+  height: 14px;
+}
+.feed-suggest-avatar.skeleton-line {
+  width: 36px;
+  height: 36px;
+  border: 0;
+}
+.skeleton-suggest-name {
+  width: 110px;
+  height: 12px;
+}
+.skeleton-suggest-spec {
+  width: 80px;
+  height: 10px;
+}
+/* Esqueleto de la cuenta: misma concha que el panel (barra + contenido). */
+.skeleton-loading--account .account-sidebar__nav .skeleton-line,
+.skeleton-loading--account .skeleton-nav-item {
+  height: 42px;
+  border-radius: 12px;
+}
+.skeleton-loading--account .account-profile-avatar.skeleton-line {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+.skeleton-loading--account
+  .account-profile-card__copy
+  .skeleton-line.title {
+  height: 31px;
+}
+.skeleton-loading--account
+  .account-profile-card
+  > .skeleton-line.control {
+  flex: 0 0 120px;
+  width: 120px;
+  height: 42px;
+}
+.skeleton-loading--account .account-next > .skeleton-line.control {
+  flex: 0 0 150px;
+  width: 150px;
+  height: 42px;
+}
+/* La tarjeta de próxima consulta: las líneas necesitan ancho propio,
+   si no el contenedor se encoge a cero y no se ven. */
+.skeleton-loading--account .account-next > div .skeleton-line.short {
+  width: 130px;
+  height: 15px;
+}
+.skeleton-loading--account .account-next > div .skeleton-line.title {
+  width: 220px;
+  height: 25px;
+}
+.skeleton-loading--account
+  .account-next
+  > div
+  .skeleton-line:not(.short):not(.title) {
+  width: 300px;
+  height: 20px;
+}
+/* La copia del perfil con la altura del texto real. */
+.skeleton-loading--account
+  .account-profile-card__copy
+  .skeleton-line.short:first-child {
+  height: 15px;
+}
+.skeleton-loading--account
+  .account-profile-card__copy
+  .skeleton-line:not(.title):not(.short) {
+  height: 20px;
+}
+.skeleton-loading--account
+  .account-profile-card__copy
+  .skeleton-line.short:last-child {
+  height: 20px;
+}
+@media (max-width: 560px) {
+  .skeleton-loading--account
+    .account-profile-card__copy
+    .skeleton-line.title {
+    height: 26px;
+  }
+  .skeleton-loading--account
+    .account-profile-card__copy
+    .skeleton-line.short:last-child {
+    height: 40px;
+  }
+}
+@media (max-width: 900px) {
+  .skeleton-loading--account
+    .account-profile-card
+    > .skeleton-line.control {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+@media (max-width: 620px) {
+  .skeleton-loading--account .account-profile-avatar.skeleton-line {
+    width: 52px;
+    height: 52px;
+  }
+}
+/* El nombre y la descripción del perfil con la altura del texto real. */
+.skeleton-loading--profile .profile-title .skeleton-line.title {
+  height: 36px;
+  margin-top: 3px;
+}
+.skeleton-loading--profile .profile-title .skeleton-copy .skeleton-line:not(.title) {
+  height: 16px;
+}
+.skeleton-loading--profile .profile-badges .skeleton-line {
+  width: 130px;
+  height: 26px;
+  border-radius: 999px;
+}
+.skeleton-loading--profile .profile-meta-line .skeleton-line {
+  height: 18px;
+}
+.skeleton-loading--profile .profile-price .skeleton-line:first-child {
+  width: 110px;
+  height: 13px;
+}
+.skeleton-loading--profile .profile-price .skeleton-line:last-child {
+  width: 64px;
+  height: 25px;
+}
+.skeleton-loading--profile .professional-summary > .skeleton-line {
+  height: 14px;
+  margin-bottom: 8px;
+}
+.skeleton-loading--profile
+  .patient-voice
+  .skeleton-copy
+  .skeleton-line:last-child {
+  height: 24px;
+}
+@media (max-width: 560px) {
+  .skeleton-loading--profile .profile-title .skeleton-line.title {
+    height: 25px;
+  }
+  .skeleton-loading--profile
+    .profile-title
+    .skeleton-copy
+    .skeleton-line:not(.title) {
+    height: 18px;
+  }
+  .skeleton-loading--profile .profile-badges .skeleton-line {
+    height: 24px;
+  }
+  /* La ubicación real se parte en dos líneas en móvil. */
+  .skeleton-loading--profile .profile-meta-line {
+    flex-wrap: wrap;
+  }
+  .skeleton-loading--profile .profile-meta-line .skeleton-line {
+    height: 13px;
+  }
+  .skeleton-loading--profile
+    .profile-meta-line
+    .skeleton-line:first-child {
+    width: 60%;
+  }
 }
 @keyframes skeleton-pulse {
   0%,
