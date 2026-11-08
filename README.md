@@ -38,12 +38,12 @@ VITE_GOOGLE_CLIENT_ID=tu_client_id_web.apps.googleusercontent.com
   aplicación normaliza la ruta). Si se define, las peticiones REST van
   directas a esa URL.
 - Si no se define en producción, el frontend usa el proxy `/api` de
-  `vercel.json`, que hoy apunta a `https://caresync-anat.onrender.com/api`.
+  `vercel.json`, que hoy apunta a `https://yektia.onrender.com/api`.
   Ese rewrite es estático: Vercel no permite interpolar variables de entorno
   en `vercel.json`. Para cambiar el backend fijo, edita el destino del
   rewrite en `vercel.json` o define `VITE_API_REST` en el proyecto de Vercel
-  y vuelve a desplegar. El servicio de Render se sigue llamando
-  `caresync-anat` (nombre anterior a Yektia); si se renombra en Render, hay
+  y vuelve a desplegar. El servicio de Render se llama `yektia`
+  (antes `caresync-anat`); si se renombra en Render, hay
   que actualizar el destino del rewrite en `vercel.json`.
 - `VITE_SOCKET_URL` es el origen de Socket.IO; si se omite pero se define
   `VITE_API_REST`, se deriva de esa URL.
