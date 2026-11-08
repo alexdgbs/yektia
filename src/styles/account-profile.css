@@ -173,11 +173,6 @@
   margin-top: 0;
 }
 
-.account-section {
-  min-width: 0;
-  display: grid;
-}
-
 .account-profile-card {
   display: flex;
   align-items: center;
@@ -189,7 +184,7 @@
   box-shadow: var(--shadow-card);
 }
 
-.account-avatar {
+.account-profile-avatar {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -419,10 +414,25 @@
   background-size: 12px 8px;
 }
 
-/* El icono del reloj y del calendario también quedaba pegado al borde. */
-.schedule-settings input[type="time"]::-webkit-calendar-picker-indicator,
-.blocked-dates input[type="date"]::-webkit-calendar-picker-indicator {
-  margin-right: 8px;
+/* Reloj y calendario con la misma flecha, tamaño y distancia que los selects. */
+.schedule-settings input[type="time"],
+.blocked-dates input[type="date"] {
+  padding-right: 44px;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .schedule-settings input[type="time"],
+  .blocked-dates input[type="date"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%237d8580' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 12px 8px;
+  }
+
+  .schedule-settings input[type="time"]::-webkit-calendar-picker-indicator,
+  .blocked-dates input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+  }
 }
 
 .settings-grid textarea {
@@ -1339,21 +1349,18 @@
   }
 
   .account-sidebar__nav {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 6px;
+    display: grid;
+    gap: 2px;
     min-width: 0;
   }
 
   .account-sidebar__nav button {
-    flex: 0 0 auto;
-    white-space: nowrap;
+    width: 100%;
   }
 
   .account-sidebar__logout {
-    flex: 0 0 auto;
-    white-space: nowrap;
+    width: 100%;
+    margin-top: 6px;
   }
 }
 
@@ -1438,7 +1445,7 @@
     border-radius: 20px;
   }
 
-  .account-avatar {
+  .account-profile-avatar {
     width: 52px;
     height: 52px;
     font-size: 18px;

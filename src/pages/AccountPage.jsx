@@ -1,5 +1,5 @@
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FiBookmark,
   FiCalendar,
@@ -21,7 +21,7 @@ import {
   doctorInitials,
   formatCount,
 } from "../components/doctors/doctorPresentation";
-import { scrollIntoViewSmooth } from "../utils/scroll";
+import { scrollBehavior, scrollIntoViewSmooth } from "../utils/scroll";
 import MedicalApplicationPanel, {
   DoctorVerificationStatus,
 } from "../components/account/MedicalApplicationPanel";
@@ -50,7 +50,19 @@ function Dashboard({ auth, onNavigate }) {
     practice: [],
   });
   const [status, setStatus] = useState("");
-  const [activeSection, setActiveSection] = useState("cuenta");
+  const [activeSection, setActiveSection] = useState("inicio");
+  const shellRef = useRef(null);
+
+  // Una sección a la vez: al cambiar, la cuenta vuelve arriba.
+  const showSection = (id) => {
+    setActiveSection(id);
+    window.requestAnimationFrame(() => {
+      const shell = shellRef.current;
+      if (!shell) return;
+      const top = shell.getBoundingClientRect().top + window.scrollY - 104;
+      window.scrollTo({ top: Math.max(top, 0), behavior: scrollBehavior() });
+    });
+  };
 
   const load = useCallback(async () => {
     if (isAdmin) {
@@ -109,12 +121,6 @@ function Dashboard({ auth, onNavigate }) {
     }
   };
 
-  const scrollToSection = (id) => {
-    setActiveSection(id);
-    const target = document.getElementById(`cuenta-${id}`);
-    if (target) scrollIntoViewSmooth(target);
-  };
-
   const goToDirectory = () => {
     onNavigate?.("/");
     window.requestAnimationFrame(() =>
@@ -138,10 +144,12 @@ function Dashboard({ auth, onNavigate }) {
   const upcoming = isAdmin ? null : nextAppointment(appointments.personal);
 
   // Solo las secciones que hoy existen en la cuenta.
+  // "Inicio" es el panel de la cuenta, no un enlace fuera.
   const navItems = isAdmin
-    ? []
+    ? [{ id: "inicio", label: "Inicio" }]
     : isDoctor
       ? [
+          { id: "inicio", label: "Inicio" },
           { id: "consultas", label: "Mis consultas" },
           { id: "pacientes", label: "Citas de mis pacientes" },
           { id: "datos", label: "Datos personales" },
@@ -150,6 +158,7 @@ function Dashboard({ auth, onNavigate }) {
           { id: "agenda", label: "Agenda" },
         ]
       : [
+          { id: "inicio", label: "Inicio" },
           { id: "consultas", label: "Mis consultas" },
           { id: "favoritos", label: "Favoritos" },
           { id: "datos", label: "Mi cuenta" },
@@ -157,12 +166,9 @@ function Dashboard({ auth, onNavigate }) {
         ];
 
   return (
-    <section className="dashboard account-shell page-width">
+    <section className="dashboard account-shell page-width" ref={shellRef}>
       <aside className="account-sidebar" aria-label="Secciones de la cuenta">
         <nav className="account-sidebar__nav">
-          <button type="button" onClick={() => onNavigate?.("/")}>
-            Inicio
-          </button>
           {navItems.map((item) =>
             item.id === "favoritos" ? (
               <button type="button" key={item.id} onClick={goToFavorites}>
@@ -173,7 +179,7 @@ function Dashboard({ auth, onNavigate }) {
                 type="button"
                 key={item.id}
                 aria-current={activeSection === item.id}
-                onClick={() => scrollToSection(item.id)}
+                onClick={() => showSection(item.id)}
               >
                 {item.label}
               </button>
@@ -196,37 +202,35 @@ function Dashboard({ auth, onNavigate }) {
           </p>
         )}
 
-        <section className="account-profile-card" aria-label="Tu perfil">
-          <span className="account-avatar" aria-hidden="true">
-            {doctorInitials(auth.user.nombre)}
-          </span>
-          <div className="account-profile-card__copy">
-            <span className="eyebrow">{roleLabel}</span>
-            <h1>Hola, {auth.user.nombre}</h1>
-            <p>
-              {auth.user.email}
-              {auth.user.telefono ? ` · ${auth.user.telefono}` : ""}
-            </p>
-            {!isAdmin && (
+        {!isAdmin && activeSection === "inicio" && (
+          <section className="account-profile-card" aria-label="Tu perfil">
+            <span className="account-profile-avatar" aria-hidden="true">
+              {doctorInitials(auth.user.nombre)}
+            </span>
+            <div className="account-profile-card__copy">
+              <span className="eyebrow">{roleLabel}</span>
+              <h1>Hola, {auth.user.nombre}</h1>
+              <p>
+                {auth.user.email}
+                {auth.user.telefono ? ` · ${auth.user.telefono}` : ""}
+              </p>
               <p className="account-profile-card__hint">
                 {isDoctor
                   ? "Administra tus datos profesionales, horarios y citas."
                   : "Consulta tus citas y actualiza tus datos."}
               </p>
-            )}
-          </div>
-          {!isAdmin && (
+            </div>
             <button
               type="button"
               className="secondary-button"
-              onClick={() => scrollToSection("datos")}
+              onClick={() => showSection("datos")}
             >
               Editar perfil
             </button>
-          )}
-        </section>
+          </section>
+        )}
 
-        {!isAdmin && (
+        {!isAdmin && activeSection === "inicio" && (
           <div className="account-quick">
             <button type="button" onClick={goToDirectory}>
               <span className="account-quick__icon" aria-hidden="true">
@@ -235,7 +239,7 @@ function Dashboard({ auth, onNavigate }) {
               <strong>Agendar consulta</strong>
               <span>Busca especialistas y reserva tu cita</span>
             </button>
-            <button type="button" onClick={() => scrollToSection("consultas")}>
+            <button type="button" onClick={() => showSection("consultas")}>
               <span className="account-quick__icon" aria-hidden="true">
                 <FiCalendar />
               </span>
@@ -245,10 +249,7 @@ function Dashboard({ auth, onNavigate }) {
               </span>
             </button>
             {isDoctor ? (
-              <button
-                type="button"
-                onClick={() => scrollToSection("pacientes")}
-              >
+              <button type="button" onClick={() => showSection("pacientes")}>
                 <span className="account-quick__icon" aria-hidden="true">
                   <FiUser />
                 </span>
@@ -273,7 +274,7 @@ function Dashboard({ auth, onNavigate }) {
               </button>
             )}
             {isDoctor && (
-              <button type="button" onClick={() => scrollToSection("agenda")}>
+              <button type="button" onClick={() => showSection("agenda")}>
                 <span className="account-quick__icon" aria-hidden="true">
                   <FiClock />
                 </span>
@@ -286,100 +287,81 @@ function Dashboard({ auth, onNavigate }) {
 
         {isAdmin ? (
           <AdminDashboard />
-        ) : (
-          <>
-            {!loading && (
-              <section className="account-next" aria-label="Próxima consulta">
-                <div>
-                  <span className="eyebrow">Próxima consulta</span>
-                  {upcoming ? (
-                    <>
-                      <h2>
-                        {upcoming.doctor?.nombre ||
-                          "El profesional ya no está disponible"}
-                      </h2>
-                      <p>
-                        {upcoming.doctor?.especialidad ||
-                          "El perfil fue retirado del directorio."}
-                        {" · "}
-                        {date(upcoming.slot?.startsAt)}
-                        {" · "}
-                        {APPOINTMENT[upcoming.status]}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <h2>Sin consultas próximas</h2>
-                      <p>Agenda tu primera consulta cuando quieras.</p>
-                    </>
-                  )}
-                </div>
+        ) : activeSection === "inicio" ? (
+          !loading && (
+            <section className="account-next" aria-label="Próxima consulta">
+              <div>
+                <span className="eyebrow">Próxima consulta</span>
                 {upcoming ? (
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => scrollToSection("consultas")}
-                  >
-                    Ver mis consultas
-                  </button>
+                  <>
+                    <h2>
+                      {upcoming.doctor?.nombre ||
+                        "El profesional ya no está disponible"}
+                    </h2>
+                    <p>
+                      {upcoming.doctor?.especialidad ||
+                        "El perfil fue retirado del directorio."}
+                      {" · "}
+                      {date(upcoming.slot?.startsAt)}
+                      {" · "}
+                      {APPOINTMENT[upcoming.status]}
+                    </p>
+                  </>
                 ) : (
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={goToDirectory}
-                  >
-                    Agendar consulta
-                  </button>
+                  <>
+                    <h2>Sin consultas próximas</h2>
+                    <p>Agenda tu primera consulta cuando quieras.</p>
+                  </>
                 )}
-              </section>
-            )}
-
-            <div className="account-section" id="cuenta-consultas">
-              <AppointmentList
-                loading={loading}
-                items={appointments.personal}
-                title="Mis consultas"
-                mode="personal"
-                onUpdate={update}
-              />
-            </div>
-
-            {isDoctor && (
-              <div className="account-section" id="cuenta-pacientes">
-                <AppointmentList
-                  loading={loading}
-                  items={appointments.practice}
-                  title="Citas de mis pacientes"
-                  mode="practice"
-                  onUpdate={update}
-                  showPolicy={false}
-                />
               </div>
-            )}
-
-            <div className="account-section" id="cuenta-datos">
-              <AccountSettings auth={auth} />
-            </div>
-
-            <div className="account-section" id="cuenta-verificacion">
-              {isDoctor ? (
-                <DoctorVerificationStatus />
+              {upcoming ? (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => showSection("consultas")}
+                >
+                  Ver mis consultas
+                </button>
               ) : (
-                <MedicalApplicationPanel auth={auth} />
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={goToDirectory}
+                >
+                  Agendar consulta
+                </button>
               )}
-            </div>
-
-            {isDoctor && (
-              <>
-                <div className="account-section" id="cuenta-perfil">
-                  <PracticeSettings doctorId={auth.user.doctorId} />
-                </div>
-                <div className="account-section" id="cuenta-agenda">
-                  <ScheduleSettings />
-                </div>
-              </>
-            )}
-          </>
+            </section>
+          )
+        ) : activeSection === "consultas" ? (
+          <AppointmentList
+            loading={loading}
+            items={appointments.personal}
+            title="Mis consultas"
+            mode="personal"
+            onUpdate={update}
+          />
+        ) : activeSection === "pacientes" ? (
+          <AppointmentList
+            loading={loading}
+            items={appointments.practice}
+            title="Citas de mis pacientes"
+            mode="practice"
+            onUpdate={update}
+            showPolicy={false}
+          />
+        ) : activeSection === "datos" ? (
+          <AccountSettings auth={auth} />
+        ) : activeSection === "verificacion" ? (
+          isDoctor ? (
+            <DoctorVerificationStatus />
+          ) : (
+            <MedicalApplicationPanel auth={auth} />
+          )
+        ) : activeSection === "perfil" ? (
+          <PracticeSettings doctorId={auth.user.doctorId} />
+        ) : (
+          <ScheduleSettings />
         )}
 
         {status && (
@@ -401,5 +383,9 @@ export default function AccountPage({ auth, onNavigate }) {
     );
   }
 
-  return auth.user ? <Dashboard auth={auth} onNavigate={onNavigate} /> : <AuthForm auth={auth} />;
+  return auth.user ? (
+    <Dashboard auth={auth} onNavigate={onNavigate} />
+  ) : (
+    <AuthForm auth={auth} />
+  );
 }
