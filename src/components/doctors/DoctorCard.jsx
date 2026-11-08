@@ -108,13 +108,16 @@ export default function DoctorCard({
       <div className="feed-post__actions">
         <button
           type="button"
+          className="feed-post__action"
           onClick={() => onSelect(doctor, { openCalendar: true })}
         >
           <FiCalendar aria-hidden="true" />
           Disponibilidad
         </button>
         <button
-          className={isCompared ? "is-active" : undefined}
+          className={
+            isCompared ? "feed-post__action is-active" : "feed-post__action"
+          }
           type="button"
           onClick={() => onCompare(doctor)}
           aria-pressed={isCompared}
