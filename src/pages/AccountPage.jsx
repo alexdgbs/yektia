@@ -1,12 +1,5 @@
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  FiBookmark,
-  FiCalendar,
-  FiClock,
-  FiSearch,
-  FiUser,
-} from "react-icons/fi";
 import { accountApi } from "../services/accountApi";
 import { SOCKET_URL } from "../services/apiConfig";
 import { connectAuthenticatedSocket } from "../services/socketClient";
@@ -17,10 +10,7 @@ import PracticeSettings from "../components/account/PracticeSettings";
 import AdminDashboard from "../components/account/AdminDashboard";
 import AppointmentList from "../components/account/AppointmentList";
 import { APPOINTMENT, date } from "../components/account/accountPresentation";
-import {
-  doctorInitials,
-  formatCount,
-} from "../components/doctors/doctorPresentation";
+import { doctorInitials } from "../components/doctors/doctorPresentation";
 import { scrollBehavior, scrollIntoViewSmooth } from "../utils/scroll";
 import MedicalApplicationPanel, {
   DoctorVerificationStatus,
@@ -140,7 +130,6 @@ function Dashboard({ auth, onNavigate }) {
     : isDoctor
       ? "Médico"
       : "Paciente";
-  const savedCount = (auth.user.favoriteDoctorIds || []).length;
   const upcoming = isAdmin ? null : nextAppointment(appointments.personal);
 
   // Solo las secciones que hoy existen en la cuenta.
@@ -228,61 +217,6 @@ function Dashboard({ auth, onNavigate }) {
               Editar perfil
             </button>
           </section>
-        )}
-
-        {!isAdmin && activeSection === "inicio" && (
-          <div className="account-quick">
-            <button type="button" onClick={goToDirectory}>
-              <span className="account-quick__icon" aria-hidden="true">
-                <FiSearch />
-              </span>
-              <strong>Agendar consulta</strong>
-              <span>Busca especialistas y reserva tu cita</span>
-            </button>
-            <button type="button" onClick={() => showSection("consultas")}>
-              <span className="account-quick__icon" aria-hidden="true">
-                <FiCalendar />
-              </span>
-              <strong>Mis consultas</strong>
-              <span>
-                {formatCount(appointments.personal.length, "cita", "citas")}
-              </span>
-            </button>
-            {isDoctor ? (
-              <button type="button" onClick={() => showSection("pacientes")}>
-                <span className="account-quick__icon" aria-hidden="true">
-                  <FiUser />
-                </span>
-                <strong>Citas de mis pacientes</strong>
-                <span>
-                  {formatCount(appointments.practice.length, "cita", "citas")}
-                </span>
-              </button>
-            ) : (
-              <button type="button" onClick={goToFavorites}>
-                <span className="account-quick__icon" aria-hidden="true">
-                  <FiBookmark />
-                </span>
-                <strong>Mis favoritos</strong>
-                <span>
-                  {formatCount(
-                    savedCount,
-                    "perfil guardado",
-                    "perfiles guardados",
-                  )}
-                </span>
-              </button>
-            )}
-            {isDoctor && (
-              <button type="button" onClick={() => showSection("agenda")}>
-                <span className="account-quick__icon" aria-hidden="true">
-                  <FiClock />
-                </span>
-                <strong>Agenda</strong>
-                <span>Horario semanal y fechas bloqueadas</span>
-              </button>
-            )}
-          </div>
         )}
 
         {isAdmin ? (
