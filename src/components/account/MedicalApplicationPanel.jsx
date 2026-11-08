@@ -1,6 +1,18 @@
 import LoadingSkeleton from "../LoadingSkeleton";
 import { useCallback, useEffect, useState } from "react";
 import { accountApi } from "../../services/accountApi";
+import {
+  LICENSE_PATTERN,
+  LICENSE_TITLE,
+  NAME_PATTERN,
+  NAME_TITLE,
+  OPTIONAL_LICENSE_PATTERN,
+  PHONE_PATTERN,
+  PHONE_TITLE,
+  SPECIALTY_PATTERN,
+  SPECIALTY_TITLE,
+  digitsOnly,
+} from "../../utils/patterns";
 import { APPLICATION, DOCUMENTS } from "./accountPresentation";
 import AdminConfirmationDialog from "./AdminConfirmationDialog";
 export default function MedicalApplicationPanel({ auth }) {
@@ -137,6 +149,7 @@ export default function MedicalApplicationPanel({ auth }) {
           }}
         />
         <button
+          type="button"
           className="secondary-button"
           onClick={() => {
             setDismissedDecision(true);
@@ -161,11 +174,19 @@ export default function MedicalApplicationPanel({ auth }) {
           <p>Validaremos tu información contra el registro oficial.</p>
         </div>
         {open ? (
-          <button className="secondary-button" onClick={() => setOpen(false)}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setOpen(false)}
+          >
             Ocultar formulario
           </button>
         ) : (
-          <button className="secondary-button" onClick={() => setOpen(true)}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setOpen(true)}
+          >
             {application ? "Continuar solicitud" : "Iniciar solicitud"}
           </button>
         )}
@@ -188,8 +209,8 @@ export default function MedicalApplicationPanel({ auth }) {
               required
               value={form.legalName}
               set={(value) => setForm({ ...form, legalName: value })}
-              pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ.' -]+"
-              title="Usa únicamente letras"
+              pattern={NAME_PATTERN}
+              title={NAME_TITLE}
               autoComplete="name"
               maxLength={120}
             />
@@ -204,8 +225,8 @@ export default function MedicalApplicationPanel({ auth }) {
                 })
               }
               inputMode="numeric"
-              pattern="[0-9]+"
-              title="Usa únicamente números"
+              pattern={LICENSE_PATTERN}
+              title={LICENSE_TITLE}
               autoComplete="off"
               maxLength={30}
             />
@@ -216,8 +237,8 @@ export default function MedicalApplicationPanel({ auth }) {
               set={(value) =>
                 setForm({ ...form, specialty: value.replace(/[0-9]/g, "") })
               }
-              pattern="[^0-9]+"
-              title="La especialidad no puede contener números"
+              pattern={SPECIALTY_PATTERN}
+              title={SPECIALTY_TITLE}
               autoComplete="organization-title"
               maxLength={100}
             />
@@ -228,8 +249,8 @@ export default function MedicalApplicationPanel({ auth }) {
                 setForm({ ...form, specialtyLicense: value.replace(/\D/g, "") })
               }
               inputMode="numeric"
-              pattern="[0-9]*"
-              title="Usa únicamente números"
+              pattern={OPTIONAL_LICENSE_PATTERN}
+              title={LICENSE_TITLE}
               autoComplete="off"
               maxLength={30}
             />
@@ -240,14 +261,14 @@ export default function MedicalApplicationPanel({ auth }) {
               set={(value) =>
                 setForm({
                   ...form,
-                  phone: value.replace(/\D/g, "").slice(0, 10),
+                  phone: digitsOnly(value),
                 })
               }
               type="tel"
               inputMode="numeric"
-              pattern="[0-9]{10}"
+              pattern={PHONE_PATTERN}
               autoComplete="tel"
-              title="Ingresa exactamente 10 números, sin espacios"
+              title={PHONE_TITLE}
               maxLength={10}
             />
             <Field
@@ -256,7 +277,7 @@ export default function MedicalApplicationPanel({ auth }) {
               value={form.location}
               set={(value) => setForm({ ...form, location: value })}
             />
-            <button className="primary-button" disabled={busy}>
+            <button className="primary-button" type="submit" disabled={busy}>
               {busy
                 ? "Guardando…"
                 : application
@@ -318,6 +339,7 @@ export default function MedicalApplicationPanel({ auth }) {
               })}
               <button
                 className="primary-button"
+                type="button"
                 disabled={busy}
                 onClick={submit}
               >
@@ -407,17 +429,27 @@ function ApplicationDecision({ application }) {
   );
 }
 
-export function DoctorVerificationStatus() {
+// La sección del médico nunca queda en blanco: según el caso muestra el
+// estado (en revisión, rechazada, retirada, aprobada) o el formulario para
+// iniciar la solicitud cuando no hay ninguna.
+export function DoctorVerificationStatus({ auth }) {
   const [application, setApplication] = useState(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     accountApi
       .myMedicalApplication()
       .then(({ application: current }) => setApplication(current))
-      .catch((error) => {
-        console.error("No se pudo cargar la solicitud médica.", error);
-      });
+      .catch(() => setApplication(null))
+      .finally(() => setLoading(false));
   }, []);
-  return application?.status === "approved" ? (
-    <ApplicationDecision application={application} />
-  ) : null;
+  if (loading)
+    return (
+      <LoadingSkeleton variant="form" label="Cargando verificación médica" />
+    );
+  if (
+    !application ||
+    ["draft", "changes_requested"].includes(application.status)
+  )
+    return <MedicalApplicationPanel auth={auth} />;
+  return <ApplicationDecision application={application} />;
 }

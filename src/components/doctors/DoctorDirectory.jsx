@@ -15,6 +15,7 @@ import {
   doctorPrice,
   doctorRating,
   formatCount,
+  isOwnDoctorProfile,
   matchesDoctorQuery,
 } from "./doctorPresentation";
 
@@ -270,9 +271,7 @@ export default function DoctorDirectory({
                     doctor={doctor}
                     onSelect={onSelectDoctor}
                     onCompare={toggleCompare}
-                    isOwnProfile={
-                      String(auth.user?.doctorId || "") === String(doctor._id)
-                    }
+                    isOwnProfile={isOwnDoctorProfile(auth.user, doctor)}
                     isCompared={compared.some(
                       (item) => item._id === doctor._id,
                     )}
@@ -400,7 +399,7 @@ export default function DoctorDirectory({
                     onClick={() => toggleCompare(doctor)}
                     aria-label={`Quitar a ${doctor.nombre}`}
                   >
-                    <FiX />
+                    <FiX aria-hidden="true" />
                   </button>
                 </span>
               ))}
@@ -442,7 +441,7 @@ export default function DoctorDirectory({
                   aria-label="Cerrar comparación"
                   title="Cerrar comparación"
                 >
-                  <FiX />
+                  <FiX aria-hidden="true" />
                 </button>
               </header>
               <div className="comparison-table">
@@ -473,13 +472,14 @@ export default function DoctorDirectory({
                             {` / 5 · ${formatCount(count, "valoración", "valoraciones")}`}
                           </>
                         ) : (
-                          "Sin valoraciones"
+                          "—"
                         )}
                       </span>
                       <span className="comparison-positive">
                         {doctor.disponibilidad ? (
                           <>
-                            <FiCheck /> {doctor.disponibilidad}
+                            <FiCheck aria-hidden="true" />{" "}
+                            {doctor.disponibilidad}
                           </>
                         ) : (
                           "Consultar agenda en el perfil"

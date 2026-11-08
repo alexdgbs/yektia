@@ -10,12 +10,15 @@ import {
   updateComment,
   updateMyDoctorProfile,
 } from "../controllers/doctorsController.js";
-import { interactionRateLimit } from "../middleware/rateLimit.js";
+import {
+  interactionRateLimit,
+  readRateLimit,
+} from "../middleware/rateLimit.js";
 import { optionalAuth, requireAuth, requireRole } from "../middleware/auth.js";
 
 export const doctorsRouter = Router();
-doctorsRouter.get("/", optionalAuth, listDoctors);
-doctorsRouter.get("/:id", optionalAuth, getDoctor);
+doctorsRouter.get("/", optionalAuth, readRateLimit, listDoctors);
+doctorsRouter.get("/:id", optionalAuth, readRateLimit, getDoctor);
 doctorsRouter.post(
   "/:id/valorar",
   requireAuth,
@@ -51,7 +54,12 @@ doctorsRouter.delete(
   interactionRateLimit,
   deleteComment,
 );
-doctorsRouter.get("/:id/comentarios", optionalAuth, listComments);
+doctorsRouter.get(
+  "/:id/comentarios",
+  optionalAuth,
+  readRateLimit,
+  listComments,
+);
 doctorsRouter.patch(
   "/me/profile",
   requireAuth,

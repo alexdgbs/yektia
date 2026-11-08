@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  cleanText,
   parseDoctorQuery,
+  parseLimit,
+  parseOffset,
   validateComment,
   validateRating,
 } from "../src/utils/validation.js";
@@ -16,6 +19,20 @@ test("normalizes and bounds directory queries", () => {
     }),
     { search: "cardio", specialty: "Cardiología", limit: 100 },
   );
+  assert.throws(
+    () => parseDoctorQuery({ q: "x".repeat(81) }),
+    /supera el límite/,
+  );
+});
+test("bounds pagination offsets", () => {
+  assert.equal(parseOffset("10"), 10);
+  assert.equal(parseOffset("-5"), 0);
+  assert.equal(parseOffset("abc"), 0);
+  assert.equal(parseLimit("abc", 100), 100);
+});
+test("rejects overlong text instead of trimming it silently", () => {
+  assert.equal(cleanText("  hola  ", 5), "hola");
+  assert.throws(() => cleanText("hola", 3), /supera el límite/);
 });
 test("accepts valid ratings and rejects invalid ranges", () => {
   assert.equal(validateRating({ userId: "user-1", estrellas: 5 }).valid, true);

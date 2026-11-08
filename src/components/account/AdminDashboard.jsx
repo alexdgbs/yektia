@@ -4,8 +4,7 @@ import AdminConfirmationDialog from "./AdminConfirmationDialog";
 import { ADMIN_DIALOGS } from "./adminDialogs";
 import { APPLICATION, DOCUMENTS, date } from "./accountPresentation";
 import { accountApi } from "../../services/accountApi";
-import { SOCKET_URL } from "../../services/apiConfig";
-import { connectAuthenticatedSocket } from "../../services/socketClient";
+import { useAuthenticatedSocket } from "../../hooks/useSocket";
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
@@ -36,23 +35,8 @@ export default function AdminDashboard() {
   );
   useEffect(() => {
     load();
-    if (!SOCKET_URL) return undefined;
-    let socket;
-    let active = true;
-    connectAuthenticatedSocket()
-      .then((connected) => {
-        if (!active) return connected.disconnect();
-        socket = connected;
-        socket.on("solicitud_medica_actualizada", load);
-      })
-      .catch((error) => {
-        console.error("No se pudo conectar el socket del panel.", error);
-      });
-    return () => {
-      active = false;
-      socket?.disconnect();
-    };
   }, [load]);
+  useAuthenticatedSocket({ solicitud_medica_actualizada: load }, [load]);
   useEffect(() => {
     if (!selected) {
       setAudit([]);
@@ -138,6 +122,7 @@ export default function AdminDashboard() {
         <h2>Solicitudes</h2>
         {items.map((item) => (
           <button
+            type="button"
             className={selected?.id === item.id ? "active" : ""}
             key={item.id}
             onClick={() => setSelected(item)}
@@ -153,7 +138,9 @@ export default function AdminDashboard() {
           <div className="admin-empty-state">
             <span className="eyebrow">Bandeja de revisión</span>
             <h2>Sin solicitudes por revisar</h2>
-            <p>Las solicitudes nuevas aparecerán aquí cuando estén disponibles.</p>
+            <p>
+              Las solicitudes nuevas aparecerán aquí cuando estén disponibles.
+            </p>
           </div>
         )}
         {selected && (
@@ -182,6 +169,7 @@ export default function AdminDashboard() {
               <h3>Documentos</h3>
               {selected.documents.map((document) => (
                 <button
+                  type="button"
                   key={document.id}
                   onClick={() =>
                     accountApi.openMedicalDocument(selected.id, document.id)
@@ -203,11 +191,17 @@ export default function AdminDashboard() {
                   />
                 </label>
                 <div>
-                  <button onClick={() => review("changes_requested")}>
+                  <button
+                    type="button"
+                    onClick={() => review("changes_requested")}
+                  >
                     Pedir cambios
                   </button>
-                  <button onClick={() => review("rejected")}>Rechazar</button>
+                  <button type="button" onClick={() => review("rejected")}>
+                    Rechazar
+                  </button>
                   <button
+                    type="button"
                     className="primary-button"
                     onClick={() => review("approved")}
                   >

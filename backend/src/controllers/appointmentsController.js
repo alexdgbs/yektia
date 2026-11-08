@@ -1,5 +1,5 @@
 import { Appointment } from "../models/Appointment.js";
-import { isValidId } from "../utils/validation.js";
+import { isValidId, parseLimit, parseOffset } from "../utils/validation.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
 import { User } from "../models/User.js";
 import { Doctor } from "../models/Doctor.js";
@@ -10,10 +10,16 @@ import {
 } from "../services/scheduleService.js";
 import { bookAppointment } from "../services/bookingService.js";
 
-export const PATIENT_CANCELLATION_HOURS = 24;
+const PATIENT_CANCELLATION_HOURS = 24;
 export const patientCancellationAllowed = (startsAt, now = new Date()) =>
   new Date(startsAt).getTime() - now.getTime() >=
   PATIENT_CANCELLATION_HOURS * 60 * 60 * 1000;
+// Sincroniza los huecos y deja constancia de cuándo se hizo.
+const refreshAvailability = async (doctor) => {
+  await synchronizeAvailability(doctor);
+  doctor.availabilitySyncedAt = new Date();
+  await doctor.save();
+};
 const appointmentView = (appointment) => ({
   id: appointment.id,
   doctor: appointment.doctor,
@@ -36,23 +42,26 @@ export async function listAvailability(request, response, next) {
       return response
         .status(404)
         .json({ message: "Especialista no encontrado" });
+    // Solo lectura: la sincronizacion corre fuera del request para no
+    // escribir en BD en un GET; la respuesta usa los huecos actuales.
     if (
       !doctor.availabilitySyncedAt ||
       doctor.availabilitySyncedAt < new Date(Date.now() - 12 * 60 * 60 * 1000)
     ) {
-      await synchronizeAvailability(doctor);
-      doctor.availabilitySyncedAt = new Date();
-      await doctor.save();
+      setImmediate(() => {
+        refreshAvailability(doctor).catch((error) =>
+          console.error("No se pudo sincronizar la disponibilidad.", error),
+        );
+      });
     }
     const slots = await AvailabilitySlot.find({
       doctor: request.params.doctorId,
-      status: { $in: ["open", "booked"] },
+      status: "open",
       startsAt: { $gt: new Date() },
     })
       .select("startsAt endsAt status")
       .sort({ startsAt: 1 })
-      // 60 días son hasta 5.700 huecos de 15 minutos.
-      .limit(6000);
+      .limit(1000);
     return response.json(slots);
   } catch (error) {
     return next(error);
@@ -69,9 +78,7 @@ export async function getMySchedule(request, response, next) {
       return response
         .status(404)
         .json({ message: "Perfil médico no encontrado" });
-    await synchronizeAvailability(doctor);
-    doctor.availabilitySyncedAt = new Date();
-    await doctor.save();
+    await refreshAvailability(doctor);
     return response.json({
       duration: doctor.appointmentDuration,
       timezoneOffset: doctor.timezoneOffset,
@@ -123,10 +130,10 @@ export async function updateMySchedule(request, response, next) {
     doctor.weeklySchedule = schedule.rules;
     doctor.blockedDates = schedule.blockedDates;
     await doctor.save();
-    await synchronizeAvailability(doctor);
-    doctor.availabilitySyncedAt = new Date();
-    await doctor.save();
-    request.app.get("io").emit("agenda_actualizada", { doctorId: doctor.id });
+    await refreshAvailability(doctor);
+    request.app
+      .get("io")
+      ?.emit?.("agenda_actualizada", { doctorId: doctor.id });
     return response.json({
       duration: doctor.appointmentDuration,
       timezoneOffset: doctor.timezoneOffset,
@@ -152,17 +159,17 @@ export async function createAppointment(request, response, next) {
       { path: "slot" },
     ]);
     const io = request.app.get("io");
-    io.emit("agenda_actualizada", {
+    io?.emit?.("agenda_actualizada", {
       doctorId: appointment.doctor._id.toString(),
     });
-    io.to(`user:${request.user.id}`).emit("cita_actualizada", {
+    io?.to?.(`user:${request.user.id}`)?.emit?.("cita_actualizada", {
       appointmentId: appointment.id,
     });
     const doctorUser = await User.findOne({
       doctor: appointment.doctor._id,
     }).select("_id");
     if (doctorUser)
-      io.to(`user:${doctorUser.id}`).emit("cita_actualizada", {
+      io?.to?.(`user:${doctorUser.id}`)?.emit?.("cita_actualizada", {
         appointmentId: appointment.id,
       });
     return response.status(201).json(appointmentView(populated));
@@ -177,29 +184,34 @@ export async function createAppointment(request, response, next) {
       });
     if (error?.code === 20)
       return response
-        .status(503)
-        .json({ message: "Las reservas requieren MongoDB con replica set" });
+        .status(500)
+        .json({ message: "No se pudo reservar, inténtalo más tarde" });
     return next(error);
   }
 }
 
 export async function listAppointments(request, response, next) {
   try {
+    const limit = parseLimit(request.query.limit, 100);
+    const offset = parseOffset(request.query.offset);
     const populate = [
       { path: "doctor", select: "nombre especialidad verificationStatus" },
-      { path: "patient", select: "nombre email" },
+      // El medico ve el nombre del paciente, no su correo.
+      { path: "patient", select: "nombre" },
       { path: "slot" },
     ];
     const [personal, practice] = await Promise.all([
       Appointment.find({ patient: request.user._id })
         .populate(populate)
         .sort({ createdAt: -1 })
-        .limit(200),
+        .skip(offset)
+        .limit(limit),
       request.user.role === "doctor"
         ? Appointment.find({ doctor: request.user.doctor })
             .populate(populate)
             .sort({ createdAt: -1 })
-            .limit(200)
+            .skip(offset)
+            .limit(limit)
         : [],
     ]);
     return response.json({
@@ -241,62 +253,68 @@ export async function updateAppointment(request, response, next) {
         : request.body.status === "completed"
           ? ["confirmed"]
           : ["pending", "confirmed"];
-    const query = {
+    // Una lectura para validar tiempos con el horario (inmutable); el cambio
+    // de estado lo decide una sola operacion atomica con el filtro de estado.
+    const current = await Appointment.findOne({
       _id: request.params.id,
       ...ownerQuery,
-      status: { $in: allowedCurrentStatuses },
-    };
-    {
-      const current = await Appointment.findOne(query).populate([
-        { path: "doctor", select: "nombre especialidad verificationStatus" },
-        { path: "patient", select: "nombre email" },
-        { path: "slot" },
-      ]);
-      if (!current)
-        return response.status(404).json({ message: "Cita no encontrada" });
-      if (!current.slot?.startsAt || !current.slot?.endsAt)
-        return response
-          .status(409)
-          .json({ message: "El horario de la cita ya no está disponible" });
-      const now = new Date();
-      if (request.body.status === "confirmed" && current.slot.startsAt <= now)
-        return response
-          .status(409)
-          .json({ message: "No puedes confirmar una cita que ya comenzó" });
-      if (request.body.status === "completed" && current.slot.endsAt > now)
-        return response
-          .status(409)
-          .json({ message: "La cita puede completarse cuando termine" });
-      if (request.body.status === "cancelled") {
-        const treatingDoctor =
-          request.user.role === "doctor" &&
-          current.doctor?._id.toString() === request.user.doctor?.toString();
-        const doctorRemoved =
-          !current.doctor || current.doctor.verificationStatus === "removed";
-        if (
-          !treatingDoctor &&
-          !doctorRemoved &&
-          !patientCancellationAllowed(current.slot.startsAt)
-        )
-          return response.status(409).json({
-            message:
-              "Las cancelaciones en línea cierran 24 horas antes. Contacta al consultorio.",
-          });
-      }
+    }).populate([
+      { path: "doctor", select: "nombre especialidad verificationStatus" },
+      { path: "patient", select: "nombre" },
+      { path: "slot" },
+    ]);
+    if (!current)
+      return response.status(404).json({ message: "Cita no encontrada" });
+    if (!current.slot?.startsAt || !current.slot?.endsAt)
+      return response
+        .status(409)
+        .json({ message: "El horario de la cita ya no está disponible" });
+    const now = new Date();
+    if (request.body.status === "confirmed" && current.slot.startsAt <= now)
+      return response
+        .status(409)
+        .json({ message: "No puedes confirmar una cita que ya comenzó" });
+    if (request.body.status === "completed" && current.slot.endsAt > now)
+      return response
+        .status(409)
+        .json({ message: "La cita puede completarse cuando termine" });
+    if (request.body.status === "cancelled") {
+      const treatingDoctor =
+        request.user.role === "doctor" &&
+        current.doctor?._id.toString() === request.user.doctor?.toString();
+      const doctorRemoved =
+        !current.doctor || current.doctor.verificationStatus === "removed";
+      if (
+        !treatingDoctor &&
+        !doctorRemoved &&
+        !patientCancellationAllowed(current.slot.startsAt)
+      )
+        return response.status(409).json({
+          message:
+            "Las cancelaciones en línea cierran 24 horas antes. Contacta al consultorio.",
+        });
     }
     const update =
       request.body.status === "cancelled"
         ? { $set: { status: "cancelled" }, $unset: { bookingKey: 1 } }
         : { $set: { status: request.body.status } };
-    const appointment = await Appointment.findOneAndUpdate(query, update, {
-      new: true,
-    }).populate([
+    const appointment = await Appointment.findOneAndUpdate(
+      {
+        _id: request.params.id,
+        ...ownerQuery,
+        status: { $in: allowedCurrentStatuses },
+      },
+      update,
+      { new: true },
+    ).populate([
       { path: "doctor", select: "nombre especialidad verificationStatus" },
-      { path: "patient", select: "nombre email" },
+      { path: "patient", select: "nombre" },
       { path: "slot" },
     ]);
     if (!appointment)
-      return response.status(404).json({ message: "Cita no encontrada" });
+      return response.status(409).json({
+        message: "La cita cambió de estado, vuelve a intentarlo",
+      });
     if (request.body.status === "cancelled") {
       const doctor = appointment.doctor?._id
         ? await Doctor.findById(appointment.doctor._id)
@@ -310,10 +328,10 @@ export async function updateAppointment(request, response, next) {
     }
     const io = request.app.get("io");
     if (appointment.doctor?._id)
-      io.emit("agenda_actualizada", {
+      io?.emit?.("agenda_actualizada", {
         doctorId: appointment.doctor._id.toString(),
       });
-    io.to(`user:${appointment.patient._id}`).emit("cita_actualizada", {
+    io?.to?.(`user:${appointment.patient._id}`)?.emit?.("cita_actualizada", {
       appointmentId: appointment.id,
     });
     const doctorUser = appointment.doctor?._id
@@ -322,7 +340,7 @@ export async function updateAppointment(request, response, next) {
         }).select("_id")
       : null;
     if (doctorUser)
-      io.to(`user:${doctorUser.id}`).emit("cita_actualizada", {
+      io?.to?.(`user:${doctorUser.id}`)?.emit?.("cita_actualizada", {
         appointmentId: appointment.id,
       });
     return response.json(appointmentView(appointment));

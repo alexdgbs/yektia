@@ -8,6 +8,7 @@ import { authRouter } from "./routes/authRoutes.js";
 import { appointmentsRouter } from "./routes/appointmentsRoutes.js";
 import { medicalApplicationsRouter } from "./routes/medicalApplicationsRoutes.js";
 import { openapi } from "./openapi.js";
+import { JSON_BODY_LIMIT } from "./utils/constants.js";
 
 export function createApp({ frontendUrls, io }) {
   const app = express();
@@ -30,6 +31,21 @@ export function createApp({ frontendUrls, io }) {
     response.set("x-request-id", request.id);
     next();
   });
+  // Las respuestas de error siempre llevan requestId para rastrearlas.
+  app.use((request, response, next) => {
+    const sendJson = response.json.bind(response);
+    response.json = (body) => {
+      if (
+        response.statusCode >= 400 &&
+        body &&
+        typeof body === "object" &&
+        !("requestId" in body)
+      )
+        return sendJson({ ...body, requestId: request.id });
+      return sendJson(body);
+    };
+    next();
+  });
   const allowedOrigins = new Set(frontendUrls);
   app.use(
     cors({
@@ -47,9 +63,11 @@ export function createApp({ frontendUrls, io }) {
     const mutating = ["POST", "PUT", "PATCH", "DELETE"].includes(
       request.method,
     );
-    const usesSession = /(?:^|;\s*)(?:__Host-)?(?:yektia|caresync)_session=/.test(
-      request.get("cookie") || "",
-    );
+    // Retirar caresync el 2026-11-13, junto con la cookie en auth.js.
+    const usesSession =
+      /(?:^|;\s*)(?:__Host-)?(?:yektia|caresync)_session=/.test(
+        request.get("cookie") || "",
+      );
     if (!mutating || !usesSession) return next();
     const origin = request.get("origin")?.replace(/[\\/]+$/, "");
     if (origin && allowedOrigins.has(origin)) return next();
@@ -58,7 +76,7 @@ export function createApp({ frontendUrls, io }) {
       requestId: request.id,
     });
   });
-  app.use(express.json({ limit: "32kb" }));
+  app.use(express.json({ limit: JSON_BODY_LIMIT }));
   app.get("/api/health", (_request, response) =>
     response.json({ status: "ok", service: "yektia-api" }),
   );
@@ -95,6 +113,11 @@ export function createApp({ frontendUrls, io }) {
     if (error?.type === "entity.too.large")
       return response.status(413).json({
         message: "La solicitud supera el límite de 32 KB",
+        requestId: request.id,
+      });
+    if (error?.status && error.status >= 400 && error.status < 500)
+      return response.status(error.status).json({
+        message: error.message || "Solicitud inválida",
         requestId: request.id,
       });
     return response

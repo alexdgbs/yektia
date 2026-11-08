@@ -119,6 +119,10 @@ test("public doctor data exposes only the signed-in user's own rating", () => {
   const doctor = new Doctor({
     nombre: "Dra. Ana",
     especialidad: "Medicina",
+    telefono: "3325670193",
+    cedula: "1234567",
+    actualizado: "ayer",
+    fuente: "seed",
     valoraciones: [
       { userId: "user-a", estrellas: 4 },
       { userId: "user-b", estrellas: 2 },
@@ -127,6 +131,16 @@ test("public doctor data exposes only the signed-in user's own rating", () => {
   assert.equal(doctor.toPublicJSON("user-a").myRating, 4);
   assert.equal(doctor.toPublicJSON("user-c").myRating, 0);
   assert.equal(doctor.toPublicJSON("user-a").valoraciones, undefined);
+  const publicView = doctor.toPublicJSON("user-a");
+  assert.equal(publicView.telefono, undefined);
+  assert.equal(publicView.cedula, undefined);
+  assert.equal(publicView.actualizado, undefined);
+  assert.equal(publicView.fuente, undefined);
+  assert.equal(publicView.__v, undefined);
+  assert.equal(
+    doctor.toPublicJSON("user-a", { owner: true }).telefono,
+    "3325670193",
+  );
 });
 
 test("medical profiles and applications support administrative withdrawal", () => {
@@ -150,6 +164,7 @@ test("professional data erasure leaves only an anonymous appointment reference",
   const erased = professionalErasureFields();
   assert.equal(erased.nombre, "Profesional retirado");
   assert.equal(erased.verificationStatus, "removed");
+  assert.equal(erased.precio, null);
   for (const field of [
     "cedula",
     "telefono",

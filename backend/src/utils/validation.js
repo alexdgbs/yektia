@@ -2,8 +2,17 @@ import mongoose from "mongoose";
 
 export const isValidId = (id) => mongoose.isValidObjectId(id);
 
-export const cleanText = (value, max = 160) =>
-  typeof value === "string" ? value.trim().slice(0, max) : "";
+// Un texto demasiado largo se rechaza, no se recorta en silencio.
+export const cleanText = (value, max = 160) => {
+  if (typeof value !== "string") return "";
+  const text = value.trim();
+  if (text.length > max)
+    throw Object.assign(
+      new Error(`El texto supera el límite de ${max} caracteres`),
+      { status: 400 },
+    );
+  return text;
+};
 
 export function parseLimit(input, fallback = 50) {
   const parsed = Number.parseInt(input, 10);
@@ -12,12 +21,19 @@ export function parseLimit(input, fallback = 50) {
     : fallback;
 }
 
+export function parseOffset(input, fallback = 0) {
+  const parsed = Number.parseInt(input, 10);
+  return Number.isFinite(parsed)
+    ? Math.min(Math.max(parsed, 0), 10000)
+    : fallback;
+}
+
 export function parseDoctorQuery(input = {}) {
   const specialty =
     typeof input.especialidad === "string"
-      ? input.especialidad.trim().slice(0, 60)
+      ? cleanText(input.especialidad, 60)
       : "";
-  const search = typeof input.q === "string" ? input.q.trim().slice(0, 80) : "";
+  const search = typeof input.q === "string" ? cleanText(input.q, 80) : "";
   return { specialty, search, limit: parseLimit(input.limit) };
 }
 

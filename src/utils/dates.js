@@ -2,14 +2,8 @@ const WEEKDAYS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
 
 export { WEEKDAYS };
 
-// Fecha "YYYY-MM-DD" en la zona del offset dado (minutos respecto a UTC).
-export const dateKeyAtOffset = (value, offsetMinutes) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Date(date.getTime() + offsetMinutes * 60_000)
-    .toISOString()
-    .slice(0, 10);
-};
+// La fecha con offset vive en shared/ para que el backend use la misma.
+export { dateKeyAtOffset } from "../../shared/index.js";
 
 export const formatDate = (value, fallback = "") => {
   if (!value) return fallback;
@@ -53,20 +47,21 @@ export const formatDayTitle = (day) =>
       month: "long",
     }),
   );
-export const formatTimeAtOffset = (value, offset) => {
-  const shifted = new Date(new Date(value).getTime() + offset * 60_000);
-  return utcFormatter({ hour: "2-digit", minute: "2-digit" }).format(shifted);
-};
-export const formatSlotAtOffset = (value, offset) => {
-  const shifted = new Date(new Date(value).getTime() + offset * 60_000);
-  return utcFormatter({
+// Misma base para hora y fecha con zona horaria.
+const shiftedDate = (value, offset) =>
+  new Date(new Date(value).getTime() + offset * 60_000);
+export const formatTimeAtOffset = (value, offset) =>
+  utcFormatter({ hour: "2-digit", minute: "2-digit" }).format(
+    shiftedDate(value, offset),
+  );
+export const formatSlotAtOffset = (value, offset) =>
+  utcFormatter({
     weekday: "long",
     day: "numeric",
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(shifted);
-};
+  }).format(shiftedDate(value, offset));
 
 export const monthForDay = (key) => key.slice(0, 7);
 export const monthIndex = (key) => {

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { doctorsApi } from "../services/doctorsApi";
-import { SOCKET_URL } from "../services/apiConfig";
-import { connectPublicSocket } from "../services/socketClient";
+import { usePublicSocket } from "./useSocket";
 import { doctorRating } from "../components/doctors/doctorPresentation";
 
 const normalizeDoctor = (doctor) => {
@@ -37,14 +36,15 @@ export function useDoctors() {
     loadDoctors();
   }, [loadDoctors]);
 
-  // Solo un 404 significa que el perfil no existe; cualquier otro error
-  // (sin red, API caída) se propaga para mostrar el estado de error.
+  // Un 400 es un id con formato inválido: el perfil no existe, igual que
+  // un 404. Solo otros errores (sin red, API caída) se propagan como fallo
+  // de carga, para no decir "error de conexión" cuando no lo es.
   const getDoctor = useCallback(async (doctorId) => {
     let data;
     try {
       data = await doctorsApi.get(doctorId);
     } catch (error) {
-      if (error?.status === 404) return null;
+      if (error?.status === 404 || error?.status === 400) return null;
       throw error;
     }
     if (!data?._id) return null;
@@ -59,65 +59,62 @@ export function useDoctors() {
     return normalized;
   }, []);
 
-  useEffect(() => {
-    if (!SOCKET_URL) return undefined;
-    const socket = connectPublicSocket();
-    const onComment = ({ medicoId, comentario }) =>
-      setDoctors((current) =>
-        current.map((doctor) => {
-          if (doctor._id !== medicoId) return doctor;
-          const previous = (doctor.comentarios || []).find(
-            (item) => item._id === comentario._id,
-          );
-          return {
-            ...doctor,
-            comentarios: [
-              ...(doctor.comentarios || []).filter(
-                (item) => item._id !== comentario._id,
+  const onComment = ({ medicoId, comentario }) =>
+    setDoctors((current) =>
+      current.map((doctor) => {
+        if (doctor._id !== medicoId) return doctor;
+        const previous = (doctor.comentarios || []).find(
+          (item) => item._id === comentario._id,
+        );
+        return {
+          ...doctor,
+          comentarios: [
+            ...(doctor.comentarios || []).filter(
+              (item) => item._id !== comentario._id,
+            ),
+            { ...comentario, isMine: previous?.isMine || false },
+          ],
+        };
+      }),
+    );
+  const onCommentDeleted = ({ medicoId, comentarioId }) =>
+    setDoctors((current) =>
+      current.map((doctor) =>
+        doctor._id === medicoId
+          ? {
+              ...doctor,
+              comentarios: (doctor.comentarios || []).filter(
+                (item) => item._id !== comentarioId,
               ),
-              { ...comentario, isMine: previous?.isMine || false },
-            ],
-          };
-        }),
-      );
-    const onCommentDeleted = ({ medicoId, comentarioId }) =>
-      setDoctors((current) =>
-        current.map((doctor) =>
-          doctor._id === medicoId
-            ? {
-                ...doctor,
-                comentarios: (doctor.comentarios || []).filter(
-                  (item) => item._id !== comentarioId,
-                ),
-              }
-            : doctor,
-        ),
-      );
-    const onRating = ({ medicoId, promedio, ratingCount }) =>
-      setDoctors((current) =>
-        current.map((doctor) =>
-          doctor._id === medicoId
-            ? { ...doctor, promedio, ratingCount }
-            : doctor,
-        ),
-      );
-    socket.on("nuevo_comentario", onComment);
-    socket.on("comentario_eliminado", onCommentDeleted);
-    socket.on("nueva_valoracion", onRating);
-    socket.on("perfil_actualizado", ({ medico }) =>
-      setDoctors((current) =>
-        current.map((doctor) =>
-          doctor._id === medico._id ? normalizeDoctor(medico) : doctor,
-        ),
+            }
+          : doctor,
       ),
     );
-    socket.on("perfil_retirado", ({ medicoId }) =>
-      setDoctors((current) =>
-        current.filter((doctor) => doctor._id !== medicoId),
+  const onRating = ({ medicoId, promedio, ratingCount }) =>
+    setDoctors((current) =>
+      current.map((doctor) =>
+        doctor._id === medicoId ? { ...doctor, promedio, ratingCount } : doctor,
       ),
     );
-    return () => socket.disconnect();
-  }, []);
+
+  usePublicSocket(
+    {
+      nuevo_comentario: onComment,
+      comentario_eliminado: onCommentDeleted,
+      nueva_valoracion: onRating,
+      perfil_actualizado: ({ medico }) =>
+        setDoctors((current) =>
+          current.map((doctor) =>
+            doctor._id === medico._id ? normalizeDoctor(medico) : doctor,
+          ),
+        ),
+      perfil_retirado: ({ medicoId }) =>
+        setDoctors((current) =>
+          current.filter((doctor) => doctor._id !== medicoId),
+        ),
+    },
+    [],
+  );
 
   const rateDoctor = useCallback(async (doctorId, stars) => {
     const result =

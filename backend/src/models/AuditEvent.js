@@ -16,6 +16,7 @@ const auditEventSchema = new mongoose.Schema(
       index: true,
     },
     metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // Para correlacionar el evento con el x-request-id de la petición.
     requestId: { type: String, default: "", trim: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } },

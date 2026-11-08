@@ -1,3 +1,4 @@
+import { MAX_DOCUMENT_BYTES } from "../utils/constants.js";
 import mongoose from "mongoose";
 
 const medicalDocumentSchema = new mongoose.Schema(
@@ -19,7 +20,7 @@ const medicalDocumentSchema = new mongoose.Schema(
       enum: ["application/pdf", "image/jpeg", "image/png"],
       required: true,
     },
-    size: { type: Number, required: true, max: 5 * 1024 * 1024 },
+    size: { type: Number, required: true, max: MAX_DOCUMENT_BYTES },
     data: { type: Buffer, required: true, select: false },
   },
   { timestamps: true },

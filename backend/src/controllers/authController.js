@@ -1,16 +1,21 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import mongoose from "mongoose";
 import { OAuth2Client } from "google-auth-library";
 import { Session } from "../models/Session.js";
 import { User } from "../models/User.js";
 import { Doctor } from "../models/Doctor.js";
-import { createSocketTicket } from "../middleware/auth.js";
+import { createSocketTicket, sessionHash } from "../middleware/auth.js";
+import {
+  isValidPersonName,
+  isValidPhone,
+  MAX_FAVORITE_DOCTORS,
+} from "../utils/constants.js";
 
 const SESSION_DAYS = 7;
+const MAX_ACTIVE_SESSIONS = 5;
 const normalizeEmail = (value) =>
   typeof value === "string" ? value.trim().toLowerCase() : "";
 const validEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-const hashToken = (value) => createHash("sha256").update(value).digest("hex");
 const cookieName = () =>
   process.env.NODE_ENV === "production"
     ? "__Host-yektia_session"
@@ -33,14 +38,21 @@ const isAdminEmail = (email) =>
     .includes(email);
 const googleClient = new OAuth2Client();
 
-async function createSession(request, response, user) {
+export async function createSession(request, response, user) {
   const token = randomBytes(32).toString("base64url");
-  await Session.create({
-    tokenHash: hashToken(token),
+  const session = await Session.create({
+    tokenHash: sessionHash(token),
     user: user._id,
     expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
   });
+  // Rotacion: solo quedan las sesiones activas mas recientes.
+  const sessions = await Session.find({ user: user._id })
+    .sort({ createdAt: -1, _id: -1 })
+    .select("_id");
+  const old = sessions.slice(MAX_ACTIVE_SESSIONS).map((item) => item._id);
+  if (old.length) await Session.deleteMany({ _id: { $in: old } });
   response.cookie(cookieName(), token, cookieOptions());
+  return session;
 }
 
 export async function googleLogin(request, response, next) {
@@ -81,27 +93,39 @@ export async function googleLogin(request, response, next) {
     }
 
     let user = await User.findOne({ $or: [{ googleSub }, { email }] });
-    const isNew = !user;
+    let isNew = !user;
     if (!user) {
       const nombre =
         typeof payload.name === "string"
           ? payload.name.trim().slice(0, 80)
           : email.split("@")[0];
-      user = await User.create({
-        nombre,
-        email,
-        googleSub,
-        role: isAdminEmail(email) ? "admin" : "patient",
-        emailVerifiedAt: new Date(),
-      });
-    } else {
+      try {
+        user = await User.create({
+          nombre,
+          email,
+          googleSub,
+          role: isAdminEmail(email) ? "admin" : "patient",
+        });
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+        // Otro login creo la cuenta a la vez: se usa la existente.
+        user = await User.findOne({ $or: [{ googleSub }, { email }] });
+        if (!user) throw error;
+        isNew = false;
+      }
+    }
+    if (!isNew) {
       if (user.googleSub && user.googleSub !== googleSub)
         return response.status(409).json({
           message: "Este correo ya está vinculado a otra cuenta de Google",
         });
       user.googleSub = googleSub;
-      if (!user.emailVerifiedAt) user.emailVerifiedAt = new Date();
-      if (isAdminEmail(email) && user.role !== "admin") user.role = "admin";
+      // El rol de admin sube y baja con ADMIN_EMAILS.
+      if (isAdminEmail(email)) {
+        if (user.role !== "admin") user.role = "admin";
+      } else if (user.role === "admin") {
+        user.role = user.doctor ? "doctor" : "patient";
+      }
       if (user.isModified()) await user.save();
     }
 
@@ -114,15 +138,7 @@ export async function googleLogin(request, response, next) {
 
 export async function me(request, response, next) {
   try {
-    if (request.user?.role === "doctor" && request.user.doctor) {
-      const doctor = await Doctor.findById(request.user.doctor).select(
-        "nombre",
-      );
-      if (doctor?.nombre && request.user.nombre !== doctor.nombre) {
-        request.user.nombre = doctor.nombre;
-        await request.user.save();
-      }
-    }
+    // Lectura sin efectos: no se toca el nombre ni se guarda nada.
     return response.json({ user: request.user?.toPublicJSON() || null });
   } catch (error) {
     return next(error);
@@ -135,29 +151,30 @@ export function socketTicket(request, response) {
 
 export async function updateMe(request, response, next) {
   try {
-    const nombre =
-      typeof request.body.nombre === "string" ? request.body.nombre.trim() : "";
-    const telefono =
-      typeof request.body.telefono === "string"
-        ? request.body.telefono.trim()
-        : "";
-    if (
-      nombre.length < 2 ||
-      nombre.length > 80 ||
-      !/^[\p{L}\p{M}.' -]+$/u.test(nombre) ||
-      (telefono && !/^\d{10}$/.test(telefono))
-    )
-      return response
-        .status(400)
-        .json({ message: "Usa un nombre válido y un teléfono de 10 números" });
-    if (request.user.role === "doctor") {
+    // Parcial: solo se actualizan los campos presentes en el body.
+    const updates = {};
+    if (typeof request.body.nombre === "string") {
+      const nombre = request.body.nombre.trim();
+      if (nombre.length < 2 || nombre.length > 80 || !isValidPersonName(nombre))
+        return response.status(400).json({ message: "Usa un nombre válido" });
+      updates.nombre = nombre;
+    }
+    if (typeof request.body.telefono === "string") {
+      const telefono = request.body.telefono.trim();
+      if (telefono && !isValidPhone(telefono))
+        return response
+          .status(400)
+          .json({ message: "El teléfono debe tener 10 números" });
+      updates.telefono = telefono;
+    }
+    if (request.user.role === "doctor" && updates.nombre !== undefined) {
       const doctor = await Doctor.findById(request.user.doctor).select(
         "nombre",
       );
-      request.user.nombre = doctor?.nombre || request.user.nombre;
-    } else request.user.nombre = nombre;
-    request.user.telefono = telefono;
-    await request.user.save();
+      updates.nombre = doctor?.nombre || request.user.nombre;
+    }
+    Object.assign(request.user, updates);
+    if (request.user.isModified()) await request.user.save();
     return response.json({ user: request.user.toPublicJSON() });
   } catch (error) {
     return next(error);
@@ -169,7 +186,7 @@ export async function syncFavorites(request, response, next) {
     const requested = Array.isArray(request.body.doctorIds)
       ? [...new Set(request.body.doctorIds)]
           .filter((id) => mongoose.isValidObjectId(id))
-          .slice(0, 100)
+          .slice(0, MAX_FAVORITE_DOCTORS)
       : [];
     const doctors = await Doctor.find({
       _id: { $in: requested },
@@ -185,7 +202,10 @@ export async function syncFavorites(request, response, next) {
 
 export async function logout(request, response, next) {
   try {
-    if (request.sessionId) await Session.deleteOne({ _id: request.sessionId });
+    if (request.body?.all === true)
+      await Session.deleteMany({ user: request.user._id });
+    else if (request.sessionId)
+      await Session.deleteOne({ _id: request.sessionId });
     response.clearCookie(cookieName(), {
       ...cookieOptions(),
       maxAge: undefined,

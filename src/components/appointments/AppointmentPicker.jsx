@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import LoadingSkeleton from "../LoadingSkeleton";
 import { accountApi } from "../../services/accountApi";
-import { SOCKET_URL } from "../../services/apiConfig";
-import { connectPublicSocket } from "../../services/socketClient";
-import { formatDuration } from "../doctors/doctorPresentation";
+import { usePublicSocket } from "../../hooks/useSocket";
+import {
+  formatDuration,
+  isOwnDoctorProfile,
+} from "../doctors/doctorPresentation";
 
 import {
   WEEKDAYS,
@@ -47,6 +49,7 @@ export default function AppointmentPicker({ doctor, auth, onNavigate }) {
     return () => narrowViewport.removeEventListener("change", updatePanelCount);
   }, []);
 
+  const loadRef = useRef(null);
   useEffect(() => {
     let active = true;
     const load = async () => {
@@ -66,22 +69,21 @@ export default function AppointmentPicker({ doctor, auth, onNavigate }) {
       }
     };
 
+    loadRef.current = load;
     load();
-    if (!SOCKET_URL) {
-      return () => {
-        active = false;
-      };
-    }
-
-    const socket = connectPublicSocket();
-    socket.on("agenda_actualizada", ({ doctorId }) => {
-      if (doctorId === doctor._id) load();
-    });
     return () => {
       active = false;
-      socket.disconnect();
     };
   }, [doctor._id]);
+
+  usePublicSocket(
+    {
+      agenda_actualizada: ({ doctorId }) => {
+        if (doctorId === doctor._id) loadRef.current?.();
+      },
+    },
+    [doctor._id],
+  );
 
   const slotsByDay = useMemo(() => {
     const grouped = new Map();
@@ -138,8 +140,7 @@ export default function AppointmentPicker({ doctor, auth, onNavigate }) {
   );
   const activeSlot = selectedSlotIsAvailable ? selected : "";
   const canRequestAppointment =
-    auth.user?.role !== "admin" &&
-    String(auth.user?.doctorId || "") !== String(doctor._id);
+    auth.user?.role !== "admin" && !isOwnDoctorProfile(auth.user, doctor);
 
   const requestAppointment = async () => {
     if (!auth.user) {
@@ -150,7 +151,7 @@ export default function AppointmentPicker({ doctor, auth, onNavigate }) {
       setStatus("La cuenta administrativa no puede solicitar citas.");
       return;
     }
-    if (String(auth.user.doctorId || "") === String(doctor._id)) {
+    if (isOwnDoctorProfile(auth.user, doctor)) {
       setStatus("No puedes agendar una cita contigo mismo.");
       return;
     }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { motion as Motion } from "framer-motion";
+import { motion as Motion, useReducedMotion } from "framer-motion";
 import { FiX } from "react-icons/fi";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import DoctorProfile from "../components/doctors/DoctorProfile";
@@ -20,6 +20,11 @@ export default function DoctorPage({
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
   const panelEscapeRef = useRef(null);
+  // Con movimiento reducido no hay fundido ni desplazamiento del modal.
+  const reduceMotion = useReducedMotion();
+  const transition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.12, ease: "easeOut" };
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -78,10 +83,10 @@ export default function DoctorPage({
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onBack();
       }}
-      initial={{ opacity: 0 }}
+      initial={reduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.12, ease: "easeOut" }}
+      exit={reduceMotion ? undefined : { opacity: 0 }}
+      transition={transition}
     >
       <Motion.section
         className="doctor-modal"
@@ -91,10 +96,10 @@ export default function DoctorPage({
         aria-label={
           doctor ? `Perfil de ${doctor.nombre}` : "Perfil del especialista"
         }
-        initial={{ opacity: 0, y: 8 }}
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 5 }}
-        transition={{ duration: 0.12, ease: "easeOut" }}
+        exit={reduceMotion ? undefined : { opacity: 0, y: 5 }}
+        transition={transition}
       >
         <header className="doctor-modal__toolbar">
           <span>{loading ? "Cargando perfil" : "Perfil del especialista"}</span>

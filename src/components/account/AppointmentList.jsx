@@ -86,7 +86,10 @@ export default function AppointmentList({
 
                   <div className="appointment-actions">
                     {mode === "practice" && item.status === "pending" && (
-                      <button onClick={() => onUpdate(item.id, "confirmed")}>
+                      <button
+                        type="button"
+                        onClick={() => onUpdate(item.id, "confirmed")}
+                      >
                         Confirmar
                       </button>
                     )}
@@ -94,12 +97,18 @@ export default function AppointmentList({
                       (mode === "practice" ||
                         patientCanCancel ||
                         doctorRemoved) && (
-                        <button onClick={() => onUpdate(item.id, "cancelled")}>
+                        <button
+                          type="button"
+                          onClick={() => onUpdate(item.id, "cancelled")}
+                        >
                           Cancelar
                         </button>
                       )}
                     {mode === "practice" && item.status === "confirmed" && (
-                      <button onClick={() => onUpdate(item.id, "completed")}>
+                      <button
+                        type="button"
+                        onClick={() => onUpdate(item.id, "completed")}
+                      >
                         Completar
                       </button>
                     )}

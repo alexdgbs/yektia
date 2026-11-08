@@ -1,5 +1,19 @@
-// Zona horaria de Ciudad de México (UTC-6, sin horario de verano).
-export const MEXICO_CITY_OFFSET_MINUTES = -360;
-
-// Precio máximo de una consulta en MXN.
-export const MAX_CONSULTATION_PRICE = 100000;
+// Las constantes viven en shared/ para que el backend use las mismas.
+export {
+  APPOINTMENT_DURATIONS,
+  isValidAppointmentDuration,
+  isValidPersonName,
+  isValidPhone,
+  isValidTimezoneOffset,
+  JSON_BODY_LIMIT,
+  MAX_CONSULTATION_PRICE,
+  MAX_DOCUMENT_BYTES,
+  MAX_FAVORITE_DOCTORS,
+  MEXICO_CITY_OFFSET_MINUTES,
+  PERSON_NAME_PATTERN,
+  PHONE_PATTERN,
+  TIME_PATTERN,
+  TIMEZONE_OFFSET_MAX_MINUTES,
+  TIMEZONE_OFFSET_MIN_MINUTES,
+  timeToMinutes,
+} from "../../shared/index.js";

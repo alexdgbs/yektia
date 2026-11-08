@@ -1,6 +1,7 @@
 // Doctores de ejemplo para el directorio. Uso: cd backend && npm run seed:doctors
-// Actualiza por nombre (o por cédula anterior) sin duplicar: si corres el
-// seed dos veces, la segunda solo actualiza los datos. Los datos son
+// Si el doctor ya existe, solo completa lo que le falte: nunca reescribe sus
+// datos reales (teléfono, descripción, precio, horario o verificación). Si
+// corres el seed dos veces, la segunda no cambia nada. Los datos son
 // inventados para la demostración, no corresponden a médicos reales.
 import "dotenv/config";
 import mongoose from "mongoose";
@@ -23,9 +24,8 @@ const EXAMPLE_DOCTORS = [
     descripcion:
       "Médica general con atención en salud preventiva, seguimiento de enfermedades comunes y orientación para toda la familia.",
     cedula: "006210025",
-    telefono: "",
     ubicacion: "Consultorio Médico Vitala, Guadalajara, Jalisco",
-    disponibilidad: "Lun a vie, 9:00–18:00",
+    disponibilidad: "Lun a jue, 9:00–18:00; vie, 9:00–14:00",
     precio: "600",
     idiomas: ["Español", "Inglés"],
     seguros: [],
@@ -33,7 +33,6 @@ const EXAMPLE_DOCTORS = [
     appointmentDuration: 45,
     timezoneOffset: MEXICO_CITY_OFFSET_MINUTES,
     weeklySchedule: WEEKDAYS,
-    fuente: "",
   },
   {
     nombre: "Dra. Lucía Mendoza Ruiz",
@@ -44,7 +43,7 @@ const EXAMPLE_DOCTORS = [
     cedulaAnterior: "1000001",
     telefono: "3318092456",
     ubicacion: "Consultorio 204, Av. Chapultepec Sur 123, Guadalajara, Jalisco",
-    disponibilidad: "Lun a vie, 9:00–18:00",
+    disponibilidad: "Lun a jue, 9:00–18:00; vie, 9:00–14:00",
     precio: "650",
     idiomas: ["Español", "Inglés"],
     seguros: ["GNP", "AXA"],
@@ -52,7 +51,6 @@ const EXAMPLE_DOCTORS = [
     appointmentDuration: 45,
     timezoneOffset: MEXICO_CITY_OFFSET_MINUTES,
     weeklySchedule: WEEKDAYS,
-    fuente: "ejemplo",
   },
   {
     nombre: "Dr. Carlos Hernández Vega",
@@ -77,7 +75,6 @@ const EXAMPLE_DOCTORS = [
       { day: 4, start: "08:00", end: "16:00" },
       { day: 5, start: "09:00", end: "13:00" },
     ],
-    fuente: "ejemplo",
   },
   {
     nombre: "Dra. Ana Sofía Ramírez Torres",
@@ -102,7 +99,6 @@ const EXAMPLE_DOCTORS = [
       { day: 5, start: "10:00", end: "19:00" },
       { day: 6, start: "10:00", end: "19:00" },
     ],
-    fuente: "ejemplo",
   },
   {
     nombre: "Dr. Jorge Luis Navarro Peña",
@@ -125,7 +121,6 @@ const EXAMPLE_DOCTORS = [
       { day: 3, start: "09:00", end: "17:00" },
       { day: 5, start: "09:00", end: "17:00" },
     ],
-    fuente: "ejemplo",
   },
   {
     nombre: "Dra. María Fernanda Castillo León",
@@ -149,9 +144,15 @@ const EXAMPLE_DOCTORS = [
       start: "08:30",
       end: "15:30",
     })),
-    fuente: "ejemplo",
   },
 ];
+
+// Vacío para el seed: texto en blanco, lista vacía o campo sin valor.
+const isMissing = (value) =>
+  value === undefined ||
+  value === null ||
+  value === "" ||
+  (Array.isArray(value) && value.length === 0);
 
 async function main() {
   const uri = process.env.MONGO_URI;
@@ -159,25 +160,51 @@ async function main() {
   await mongoose.connect(uri);
   let created = 0;
   let updated = 0;
+  let skipped = 0;
   for (const doctor of EXAMPLE_DOCTORS) {
     const { cedulaAnterior, ...fields } = doctor;
-    // Por nombre (o por la cédula anterior): así el seed actualiza en su
-    // lugar a los doctores que ya existen, sin crear duplicados.
-    const query = cedulaAnterior
-      ? { $or: [{ nombre: fields.nombre }, { cedula: cedulaAnterior }] }
-      : { nombre: fields.nombre };
-    const existing = await Doctor.findOne(query);
-    if (existing) {
-      Object.assign(existing, fields);
-      await existing.save();
-      updated += 1;
-    } else {
-      await Doctor.create(fields);
-      created += 1;
+    try {
+      // Por nombre (o por la cédula anterior): así el seed actualiza en su
+      // lugar a los doctores que ya existen, sin crear duplicados.
+      const query = cedulaAnterior
+        ? { $or: [{ nombre: fields.nombre }, { cedula: cedulaAnterior }] }
+        : { nombre: fields.nombre };
+      const existing = await Doctor.findOne(query);
+      if (existing) {
+        // Solo completa lo que falte: nunca reescribe datos reales
+        // (teléfono, descripción, precio, horario o verificación).
+        let touched = false;
+        for (const [key, value] of Object.entries(fields)) {
+          if (isMissing(existing[key])) {
+            existing[key] = value;
+            touched = true;
+          }
+        }
+        if (touched) await existing.save();
+        updated += 1;
+      } else {
+        // Otro doctor ya tiene esa cédula: se salta este y se sigue.
+        const clash = fields.cedula
+          ? await Doctor.findOne({ cedula: fields.cedula })
+          : null;
+        if (clash) {
+          console.warn(
+            `Sin sembrar ${fields.nombre}: su cédula ya la tiene otro doctor.`,
+          );
+          skipped += 1;
+          continue;
+        }
+        await Doctor.create(fields);
+        created += 1;
+      }
+    } catch (error) {
+      // Un doctor no tumba el resto del seed (p. ej. cédula duplicada).
+      console.warn(`Sin sembrar ${fields.nombre}: ${error.message}`);
+      skipped += 1;
     }
   }
   console.log(
-    `Doctores de ejemplo: ${created} creados, ${updated} actualizados.`,
+    `Doctores de ejemplo: ${created} creados, ${updated} actualizados, ${skipped} omitidos.`,
   );
 }
 

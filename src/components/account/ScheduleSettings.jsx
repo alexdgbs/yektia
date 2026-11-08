@@ -2,6 +2,7 @@ import LoadingSkeleton from "../LoadingSkeleton";
 import { useEffect, useState } from "react";
 import { accountApi } from "../../services/accountApi";
 import { formatDuration } from "../doctors/doctorPresentation";
+import { APPOINTMENT_DURATIONS } from "../../../shared/index.js";
 const DAYS = [
   { value: 1, label: "Lunes" },
   { value: 2, label: "Martes" },
@@ -66,7 +67,7 @@ export default function ScheduleSettings() {
         const saved = rulesToRanges(result.rules);
         setSchedule({
           ...result,
-          ranges: [saved[0] || DEFAULT_SCHEDULE_RANGE],
+          ranges: saved.length ? saved : [DEFAULT_SCHEDULE_RANGE],
         });
       })
       .catch((error) => setMessage(error.message))
@@ -85,6 +86,24 @@ export default function ScheduleSettings() {
           next.to = next.from;
         return next;
       }),
+    }));
+  const addRange = () => {
+    const last = schedule.ranges.at(-1) || DEFAULT_SCHEDULE_RANGE;
+    setSchedule((current) => ({
+      ...current,
+      ranges: [
+        ...current.ranges,
+        { from: 1, to: 1, start: last.start, end: last.end },
+      ],
+    }));
+  };
+  const removeRange = (index) =>
+    setSchedule((current) => ({
+      ...current,
+      ranges:
+        current.ranges.length > 1
+          ? current.ranges.filter((_, position) => position !== index)
+          : current.ranges,
     }));
   const addBlockedDate = () => {
     if (!blockedDate || schedule.blockedDates.includes(blockedDate)) return;
@@ -113,7 +132,6 @@ export default function ScheduleSettings() {
       setBusy(false);
     }
   };
-  const range = schedule.ranges[0];
   if (loading)
     return (
       <LoadingSkeleton variant="schedule" label="Cargando agenda médica" />
@@ -124,8 +142,8 @@ export default function ScheduleSettings() {
         <span className="eyebrow">Agenda</span>
         <h2>Horario semanal</h2>
         <p>
-          Define tu rango habitual. Las horas disponibles se generan
-          automáticamente.
+          Define tus rangos habituales; añade uno por cada horario distinto. Las
+          horas disponibles se generan automáticamente.
         </p>
       </header>
       <form onSubmit={save}>
@@ -137,7 +155,7 @@ export default function ScheduleSettings() {
               setSchedule({ ...schedule, duration: Number(event.target.value) })
             }
           >
-            {[15, 30, 45, 60, 90].map((value) => (
+            {APPOINTMENT_DURATIONS.map((value) => (
               <option key={value} value={value}>
                 {formatDuration(value)}
               </option>
@@ -145,52 +163,83 @@ export default function ScheduleSettings() {
           </select>
         </label>
         <div className="schedule-rules">
-          <div className="schedule-rule">
-            <label>
-              De
-              <select
-                value={range.from}
-                onChange={(event) => updateRange(0, "from", event.target.value)}
-              >
-                {DAYS.map((day) => (
-                  <option key={day.value} value={day.value}>
-                    {day.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              A
-              <select
-                value={range.to}
-                onChange={(event) => updateRange(0, "to", event.target.value)}
-              >
-                {DAYS.slice(dayPosition(range.from)).map((day) => (
-                  <option key={day.value} value={day.value}>
-                    {day.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Abre
-              <input
-                type="time"
-                value={range.start}
-                onChange={(event) =>
-                  updateRange(0, "start", event.target.value)
-                }
-              />
-            </label>
-            <label>
-              Cierra
-              <input
-                type="time"
-                value={range.end}
-                onChange={(event) => updateRange(0, "end", event.target.value)}
-              />
-            </label>
-          </div>
+          {schedule.ranges.map((item, index) => (
+            <div
+              className="schedule-rule"
+              key={index}
+              role="group"
+              aria-label={`Rango ${index + 1} de ${schedule.ranges.length}`}
+            >
+              <label>
+                De
+                <select
+                  value={item.from}
+                  aria-label={`Día inicial del rango ${index + 1}`}
+                  onChange={(event) =>
+                    updateRange(index, "from", event.target.value)
+                  }
+                >
+                  {DAYS.map((day) => (
+                    <option key={day.value} value={day.value}>
+                      {day.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                A
+                <select
+                  value={item.to}
+                  aria-label={`Día final del rango ${index + 1}`}
+                  onChange={(event) =>
+                    updateRange(index, "to", event.target.value)
+                  }
+                >
+                  {DAYS.slice(dayPosition(item.from)).map((day) => (
+                    <option key={day.value} value={day.value}>
+                      {day.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Abre
+                <input
+                  type="time"
+                  value={item.start}
+                  aria-label={`Hora de apertura del rango ${index + 1}`}
+                  onChange={(event) =>
+                    updateRange(index, "start", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Cierra
+                <input
+                  type="time"
+                  value={item.end}
+                  aria-label={`Hora de cierre del rango ${index + 1}`}
+                  onChange={(event) =>
+                    updateRange(index, "end", event.target.value)
+                  }
+                />
+              </label>
+              {schedule.ranges.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeRange(index)}
+                  aria-label={`Quitar rango ${index + 1}`}
+                >
+                  Quitar rango
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        <div>
+          <button type="button" className="secondary-button" onClick={addRange}>
+            Añadir rango
+          </button>
         </div>
         <div className="blocked-dates">
           <h3>Excepciones</h3>
@@ -233,7 +282,7 @@ export default function ScheduleSettings() {
             </ul>
           )}
         </div>
-        <button className="primary-button" disabled={busy}>
+        <button className="primary-button" type="submit" disabled={busy}>
           {busy ? "Guardando…" : "Guardar agenda"}
         </button>
         {message && <small role="status">{message}</small>}

@@ -2,6 +2,7 @@ import LoadingSkeleton from "../LoadingSkeleton";
 import { useEffect, useState } from "react";
 import { accountApi } from "../../services/accountApi";
 import { MAX_CONSULTATION_PRICE } from "../../utils/constants";
+import { PHONE_PATTERN, PHONE_TITLE, digitsOnly } from "../../utils/patterns";
 export default function PracticeSettings({ doctorId }) {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
@@ -79,14 +80,14 @@ export default function PracticeSettings({ doctorId }) {
           <input
             type="tel"
             inputMode="numeric"
-            pattern="[0-9]{10}"
-            title="Ingresa los 10 números, sin espacios"
+            pattern={PHONE_PATTERN}
+            title={PHONE_TITLE}
             maxLength="10"
             value={form.phone}
             onChange={(event) =>
               setForm({
                 ...form,
-                phone: event.target.value.replace(/\D/g, "").slice(0, 10),
+                phone: digitsOnly(event.target.value),
               })
             }
           />
@@ -112,7 +113,7 @@ export default function PracticeSettings({ doctorId }) {
             placeholder="Resume tu formación, experiencia y tipo de atención."
           />
         </label>
-        <button className="primary-button" disabled={busy}>
+        <button className="primary-button" type="submit" disabled={busy}>
           {busy ? "Guardando…" : "Guardar perfil"}
         </button>
         {message && <small role="status">{message}</small>}

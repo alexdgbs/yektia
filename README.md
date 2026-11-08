@@ -156,4 +156,5 @@ API responde 429.
 La cookie de sesión se llama `yektia_session` (`__Host-yektia_session` en
 producción). Por compatibilidad, el backend también acepta la cookie anterior
 `caresync_session`, así las sesiones creadas antes del cambio de nombre
-siguen válidas hasta que expiren.
+siguen válidas hasta que expiren. Se retira el 2026-11-13, cuando vence la
+última sesión creada antes del cambio de nombre (duran 7 días).

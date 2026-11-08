@@ -1,4 +1,11 @@
-import { MEXICO_CITY_OFFSET_MINUTES } from "../utils/constants.js";
+import {
+  APPOINTMENT_DURATIONS,
+  MAX_CONSULTATION_PRICE,
+  MEXICO_CITY_OFFSET_MINUTES,
+  TIME_PATTERN,
+  TIMEZONE_OFFSET_MAX_MINUTES,
+  TIMEZONE_OFFSET_MIN_MINUTES,
+} from "../utils/constants.js";
 import mongoose from "mongoose";
 
 const ratingSchema = new mongoose.Schema({
@@ -14,8 +21,8 @@ const commentSchema = new mongoose.Schema({
 const scheduleRuleSchema = new mongoose.Schema(
   {
     day: { type: Number, required: true, min: 0, max: 6 },
-    start: { type: String, required: true, match: /^([01]\d|2[0-3]):[0-5]\d$/ },
-    end: { type: String, required: true, match: /^([01]\d|2[0-3]):[0-5]\d$/ },
+    start: { type: String, required: true, match: TIME_PATTERN },
+    end: { type: String, required: true, match: TIME_PATTERN },
   },
   { _id: false },
 );
@@ -29,11 +36,14 @@ const doctorSchema = new mongoose.Schema(
     imagen: { type: String, default: "", trim: true },
     ubicacion: { type: String, default: "", trim: true, maxlength: 160 },
     disponibilidad: { type: String, default: "", trim: true },
-    precio: { type: String, default: "", trim: true },
+    precio: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: MAX_CONSULTATION_PRICE,
+    },
     idiomas: { type: [String], default: [] },
     seguros: { type: [String], default: [] },
-    actualizado: { type: String, default: "", trim: true },
-    fuente: { type: String, default: "", trim: true },
     verificationStatus: {
       type: String,
       enum: ["pending", "verified", "rejected", "removed"],
@@ -42,13 +52,13 @@ const doctorSchema = new mongoose.Schema(
     },
     appointmentDuration: {
       type: Number,
-      enum: [15, 30, 45, 60, 90],
+      enum: APPOINTMENT_DURATIONS,
       default: 45,
     },
     timezoneOffset: {
       type: Number,
-      min: -720,
-      max: 840,
+      min: TIMEZONE_OFFSET_MIN_MINUTES,
+      max: TIMEZONE_OFFSET_MAX_MINUTES,
       default: MEXICO_CITY_OFFSET_MINUTES,
     },
     weeklySchedule: { type: [scheduleRuleSchema], default: [] },
@@ -60,7 +70,12 @@ const doctorSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-doctorSchema.methods.toPublicJSON = function toPublicJSON(viewerUserId = "") {
+// Vista publica: sin telefono ni cedula. El telefono solo lo ve el propio
+// medico (owner) para editar su perfil; a nadie mas se le sirve.
+doctorSchema.methods.toPublicJSON = function toPublicJSON(
+  viewerUserId = "",
+  options = {},
+) {
   const data = this.toObject();
   data.promedio = data.valoraciones.length
     ? data.valoraciones.reduce((sum, item) => sum + item.estrellas, 0) /
@@ -84,6 +99,11 @@ doctorSchema.methods.toPublicJSON = function toPublicJSON(viewerUserId = "") {
   delete data.timezoneOffset;
   delete data.availabilitySyncedAt;
   delete data.valoraciones;
+  delete data.cedula;
+  delete data.actualizado;
+  delete data.fuente;
+  delete data.__v;
+  if (!options.owner) delete data.telefono;
   return data;
 };
 

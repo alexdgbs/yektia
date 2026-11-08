@@ -21,9 +21,8 @@ export function useAuth() {
         })
         .catch((error) => {
           // Sesión vencida: se cierra sin ruido. Cualquier otro fallo
-          // (sin red) se registra y se deja la sesión como estaba.
+          // (sin red) se deja la sesión como estaba.
           if (error?.status === 401) setUser(null);
-          else console.error("No se pudo refrescar la sesión.", error);
           return null;
         }),
     [],

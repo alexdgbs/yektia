@@ -1,3 +1,9 @@
+import {
+  APPOINTMENT_DURATIONS,
+  TIMEZONE_OFFSET_MAX_MINUTES,
+  TIMEZONE_OFFSET_MIN_MINUTES,
+} from "./utils/constants.js";
+
 export const openapi = {
   openapi: "3.1.0",
   info: {
@@ -67,8 +73,12 @@ export const openapi = {
         type: "object",
         required: ["duration", "timezoneOffset", "rules"],
         properties: {
-          duration: { enum: [15, 30, 45, 60, 90] },
-          timezoneOffset: { type: "integer", minimum: -720, maximum: 840 },
+          duration: { enum: APPOINTMENT_DURATIONS },
+          timezoneOffset: {
+            type: "integer",
+            minimum: TIMEZONE_OFFSET_MIN_MINUTES,
+            maximum: TIMEZONE_OFFSET_MAX_MINUTES,
+          },
           rules: {
             type: "array",
             minItems: 1,
@@ -100,6 +110,130 @@ export const openapi = {
           specialtyLicense: { type: "string" },
           phone: { type: "string" },
           location: { type: "string", maxLength: 160 },
+        },
+      },
+      Comment: {
+        type: "object",
+        properties: {
+          _id: { type: "string" },
+          nombre: { type: "string" },
+          texto: { type: "string" },
+          fecha: { type: "string", format: "date-time" },
+          isMine: { type: "boolean" },
+        },
+      },
+      Doctor: {
+        type: "object",
+        description:
+          "Perfil público tal como lo devuelve toPublicJSON (incluye promedio y comentarios).",
+        properties: {
+          _id: { type: "string" },
+          nombre: { type: "string" },
+          especialidad: { type: "string" },
+          descripcion: { type: "string" },
+          imagen: { type: "string" },
+          ubicacion: { type: "string" },
+          disponibilidad: { type: "string" },
+          precio: { type: "number" },
+          idiomas: { type: "array", items: { type: "string" } },
+          seguros: { type: "array", items: { type: "string" } },
+          verificationStatus: {
+            enum: ["pending", "verified", "rejected", "removed"],
+          },
+          appointmentDuration: { enum: APPOINTMENT_DURATIONS },
+          promedio: { type: "number" },
+          ratingCount: { type: "integer" },
+          myRating: { type: "integer" },
+          comentarios: {
+            type: "array",
+            items: { $ref: "#/components/schemas/Comment" },
+          },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      User: {
+        type: "object",
+        description: "Cuenta tal como la devuelve toPublicJSON.",
+        properties: {
+          id: { type: "string" },
+          nombre: { type: "string" },
+          email: { type: "string", format: "email" },
+          telefono: { type: "string" },
+          role: { enum: ["patient", "doctor", "admin"] },
+          doctorId: { type: ["string", "null"] },
+          favoriteDoctorIds: { type: "array", items: { type: "string" } },
+          medicalDecision: {
+            type: ["object", "null"],
+            properties: {
+              status: { enum: ["changes_requested", "approved", "rejected"] },
+              note: { type: "string" },
+              decidedAt: { type: "string", format: "date-time" },
+            },
+          },
+        },
+      },
+      MedicalDocument: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          type: {
+            enum: ["identity", "professional_license", "specialty_license"],
+          },
+          name: { type: "string" },
+          mimeType: { enum: ["application/pdf", "image/jpeg", "image/png"] },
+          size: { type: "integer" },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      MedicalApplication: {
+        type: "object",
+        description: "Solicitud tal como la devuelve applicationJSON.",
+        properties: {
+          id: { type: "string" },
+          legalName: { type: "string" },
+          professionalLicense: { type: "string" },
+          specialty: { type: "string" },
+          specialtyLicense: { type: "string" },
+          phone: { type: "string" },
+          location: { type: "string" },
+          status: {
+            enum: [
+              "draft",
+              "submitted",
+              "changes_requested",
+              "approved",
+              "rejected",
+              "withdrawn",
+            ],
+          },
+          submittedAt: { type: ["string", "null"], format: "date-time" },
+          reviewedAt: { type: ["string", "null"], format: "date-time" },
+          reviewNote: { type: "string" },
+          applicant: { type: "string" },
+          doctor: { type: ["string", "null"] },
+          documents: {
+            type: "array",
+            items: { $ref: "#/components/schemas/MedicalDocument" },
+          },
+        },
+      },
+      AuditEvent: {
+        type: "object",
+        description: "Evento tal como lo devuelve applicationAudit.",
+        properties: {
+          id: { type: "string" },
+          actor: {
+            type: ["object", "null"],
+            properties: {
+              _id: { type: "string" },
+              nombre: { type: "string" },
+              email: { type: "string", format: "email" },
+            },
+          },
+          action: { type: "string" },
+          metadata: { type: "object" },
+          createdAt: { type: "string", format: "date-time" },
         },
       },
     },
@@ -135,6 +269,36 @@ export const openapi = {
         },
       },
     },
+    "/medicos/{id}/comentar": {
+      post: {
+        summary: "Añade o actualiza el comentario de la cuenta autenticada",
+        description:
+          "Solo después de una cita completada con ese especialista. Un comentario por cuenta: si ya existe, se actualiza.",
+        responses: {
+          200: { description: "Comentario guardado" },
+          400: { description: "El comentario no es válido" },
+          403: { description: "Cita completada requerida" },
+          404: { description: "Médico no encontrado" },
+        },
+      },
+    },
+    "/medicos/{id}/comentarios": {
+      get: {
+        summary: "Lista los comentarios más recientes del especialista",
+        parameters: [
+          {
+            name: "limit",
+            in: "query",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 50 },
+          },
+        ],
+        responses: {
+          200: { description: "Comentarios más recientes" },
+          400: { description: "Identificador inválido" },
+          404: { description: "Médico no encontrado" },
+        },
+      },
+    },
     "/medicos/{id}/comentarios/{commentId}": {
       patch: {
         summary: "Edita el comentario de la cuenta autenticada",
@@ -166,6 +330,26 @@ export const openapi = {
         summary: "Actualiza los datos de la cuenta autenticada",
         responses: {
           200: { description: "Cuenta actualizada" },
+          401: { description: "Sesión requerida" },
+        },
+      },
+    },
+    "/auth/me/favorites": {
+      put: {
+        summary: "Sincroniza la lista de favoritos de la cuenta",
+        description:
+          "Reemplaza los favoritos con los ids dados (solo verificados, máximo 100).",
+        responses: {
+          200: { description: "Favoritos actualizados" },
+          401: { description: "Sesión requerida" },
+        },
+      },
+    },
+    "/auth/socket-ticket": {
+      post: {
+        summary: "Crea un ticket de 60 segundos para el socket",
+        responses: {
+          200: { description: "Ticket creado" },
           401: { description: "Sesión requerida" },
         },
       },
@@ -216,6 +400,15 @@ export const openapi = {
         summary: "Guarda una solicitud médica",
         responses: { 200: { description: "Borrador guardado" } },
       },
+      delete: {
+        summary: "Descarta el borrador de la solicitud médica",
+        description:
+          "Solo borradores editables. Borra también sus documentos y sus eventos de auditoría.",
+        responses: {
+          204: { description: "Borrador descartado" },
+          409: { description: "La solicitud no se puede descartar" },
+        },
+      },
     },
     "/medical-applications/me/submit": {
       post: {
@@ -241,6 +434,17 @@ export const openapi = {
         responses: {
           200: { description: "Decisión registrada" },
           409: { description: "Solicitud no revisable" },
+        },
+      },
+    },
+    "/medical-applications/{id}/audit": {
+      get: {
+        summary: "Lista los eventos de auditoría de una solicitud",
+        description:
+          "Sin solicitud, la lista sale vacía: no distingue inexistente.",
+        responses: {
+          200: { description: "Eventos en orden cronológico" },
+          403: { description: "Rol administrativo requerido" },
         },
       },
     },
@@ -291,13 +495,22 @@ const jsonResponse = (description, schema) => ({
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 for (const [path, item] of Object.entries(openapi.paths)) {
   const names = [...path.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
-  if (names.length)
-    item.parameters = names.map((name) => ({
-      name,
-      in: "path",
-      required: true,
-      schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
-    }));
+  if (names.length) {
+    // No se pisan los parámetros ya definidos (p. ej. {type} es un enum,
+    // no un id de Mongo).
+    const defined = new Map(
+      (item.parameters || []).map((parameter) => [parameter.name, parameter]),
+    );
+    item.parameters = names.map(
+      (name) =>
+        defined.get(name) || {
+          name,
+          in: "path",
+          required: true,
+          schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+        },
+    );
+  }
   for (const method of ["get", "post", "put", "patch", "delete"]) {
     const operation = item[method];
     if (!operation) continue;
@@ -458,6 +671,18 @@ openapi.paths["/medical-applications/me/documents/{type}"] = {
       413: jsonResponse("Supera 5 MB", ref("Error")),
     },
   },
+  delete: {
+    summary: "Elimina un documento del borrador de la solicitud",
+    responses: {
+      200: jsonResponse("Documento eliminado", {
+        type: "object",
+        properties: { application: ref("MedicalApplication") },
+      }),
+      401: jsonResponse("Sesión requerida", ref("Error")),
+      403: jsonResponse("Rol paciente requerido", ref("Error")),
+      409: jsonResponse("Solicitud no editable", ref("Error")),
+    },
+  },
 };
 openapi.paths["/medical-applications/{id}/documents/{documentId}"] = {
   parameters: ["id", "documentId"].map((name) => ({
@@ -484,3 +709,81 @@ openapi.paths["/medical-applications/{id}/documents/{documentId}"] = {
     },
   },
 };
+
+// Rutas documentadas en la pasada 11: cuerpos y respuestas con esquema.
+openapi.paths["/medicos"].get.responses[200] = jsonResponse(
+  "Directorio disponible",
+  { type: "array", items: ref("Doctor") },
+);
+openapi.paths["/medicos/{id}"].get.responses[200] = jsonResponse(
+  "Perfil encontrado",
+  ref("Doctor"),
+);
+openapi.paths["/medicos/{id}/comentar"].post.requestBody = jsonBody({
+  type: "object",
+  required: ["texto"],
+  properties: { texto: { type: "string", maxLength: 800 } },
+});
+openapi.paths["/medicos/{id}/comentar"].post.responses[200] = jsonResponse(
+  "Comentario guardado",
+  {
+    type: "object",
+    properties: { message: { type: "string" }, comentario: ref("Comment") },
+  },
+);
+openapi.paths["/medicos/{id}/comentarios"].get.responses[200] = jsonResponse(
+  "Comentarios más recientes",
+  { type: "array", items: ref("Comment") },
+);
+// GET /auth/me usa optionalAuth: sin sesión devuelve {user: null}, sin 401.
+openapi.paths["/auth/me"].get = {
+  security: [],
+  summary: "Obtiene los datos de la cuenta autenticada",
+  responses: {
+    200: jsonResponse("Cuenta autenticada", {
+      type: "object",
+      properties: { user: { oneOf: [ref("User"), { type: "null" }] } },
+    }),
+  },
+};
+openapi.paths["/auth/me"].patch.responses[200] = jsonResponse(
+  "Cuenta actualizada",
+  {
+    type: "object",
+    properties: { user: ref("User") },
+  },
+);
+openapi.paths["/auth/me/favorites"].put.requestBody = jsonBody({
+  type: "object",
+  required: ["doctorIds"],
+  properties: { doctorIds: { type: "array", items: { type: "string" } } },
+});
+openapi.paths["/auth/me/favorites"].put.responses[200] = jsonResponse(
+  "Favoritos actualizados",
+  {
+    type: "object",
+    properties: { user: ref("User") },
+  },
+);
+openapi.paths["/auth/socket-ticket"].post.responses[200] = jsonResponse(
+  "Ticket creado",
+  {
+    type: "object",
+    required: ["ticket"],
+    properties: { ticket: { type: "string" } },
+  },
+);
+openapi.paths["/medical-applications/me"].get.responses[200] = jsonResponse(
+  "Solicitud actual",
+  {
+    type: "object",
+    properties: {
+      application: { oneOf: [ref("MedicalApplication"), { type: "null" }] },
+    },
+  },
+);
+openapi.paths["/medical-applications/{id}/audit"].get.responses[200] =
+  jsonResponse("Eventos en orden cronológico", {
+    type: "object",
+    properties: { events: { type: "array", items: ref("AuditEvent") } },
+  });

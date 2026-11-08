@@ -8,10 +8,13 @@ import {
   validateComment,
   validateRating,
 } from "../utils/validation.js";
-import { MAX_CONSULTATION_PRICE } from "../utils/constants.js";
-import { matchesDoctorQuery } from "../utils/search.js";
+import { MAX_CONSULTATION_PRICE, isValidPhone } from "../utils/constants.js";
+import { matchesDoctorQuery, normalizeText } from "../utils/search.js";
 
 const MAX_EMBEDDED_REVIEWS = 1000;
+// Tope de lectura del directorio: el limite pedido se aplica despues de
+// filtrar, asi que se lee un bloque amplio y se recorta al final.
+const DIRECTORY_FETCH_CAP = 1000;
 const canReview = (patient, doctor) =>
   Appointment.exists({ patient, doctor, status: "completed" });
 const commentView = (comment, viewerUserId = "") => ({
@@ -21,6 +24,8 @@ const commentView = (comment, viewerUserId = "") => ({
   fecha: comment.fecha,
   isMine: Boolean(viewerUserId && comment.userId === viewerUserId.toString()),
 });
+const isOwner = (request, doctorId) =>
+  request.user?.doctor?.toString() === doctorId?.toString();
 async function ownedComment(request, response, action) {
   if (!isValidId(request.params.id) || !isValidId(request.params.commentId)) {
     response.status(400).json({ message: "Identificador inválido" });
@@ -55,15 +60,26 @@ export const parseConsultationPrice = (value) => {
 
 export async function listDoctors(_request, response, next) {
   try {
-    const query = { verificationStatus: "verified" };
     const { specialty, search, limit } = parseDoctorQuery(_request.query);
-    if (specialty) query.especialidad = specialty;
-    const doctors = await Doctor.find(query).sort({ nombre: 1 }).limit(limit);
+    const doctors = await Doctor.find({ verificationStatus: "verified" })
+      .sort({ nombre: 1 })
+      .limit(DIRECTORY_FETCH_CAP);
     response.set("Cache-Control", "private, max-age=30");
     response.json(
       doctors
-        .filter((doctor) => matchesDoctorQuery(doctor, search))
-        .map((doctor) => doctor.toPublicJSON(_request.user?.id)),
+        .filter(
+          (doctor) =>
+            (!specialty ||
+              normalizeText(doctor.especialidad) ===
+                normalizeText(specialty)) &&
+            matchesDoctorQuery(doctor, search),
+        )
+        .slice(0, limit)
+        .map((doctor) =>
+          doctor.toPublicJSON(_request.user?.id, {
+            owner: isOwner(_request, doctor._id),
+          }),
+        ),
     );
   } catch (error) {
     next(error);
@@ -83,7 +99,11 @@ export async function getDoctor(request, response, next) {
         .status(404)
         .json({ message: "Médico no encontrado", requestId: request.id });
     response.set("Cache-Control", "private, max-age=30");
-    return response.json(doctor.toPublicJSON(request.user?.id));
+    return response.json(
+      doctor.toPublicJSON(request.user?.id, {
+        owner: isOwner(request, doctor._id),
+      }),
+    );
   } catch (error) {
     return next(error);
   }
@@ -111,7 +131,10 @@ export async function rateDoctor(request, response, next) {
       return response
         .status(403)
         .json({ message: "Puedes valorar después de completar una cita" });
-    const doctor = await Doctor.findById(id);
+    const doctor = await Doctor.findOne({
+      _id: id,
+      verificationStatus: "verified",
+    });
     if (!doctor)
       return response.status(404).json({ message: "Médico no encontrado" });
     let rating = doctor.valoraciones.find((item) => item.userId === userId);
@@ -127,9 +150,11 @@ export async function rateDoctor(request, response, next) {
     await doctor.save();
     const promedio = doctor.toPublicJSON().promedio;
     const ratingCount = doctor.valoraciones.length;
-    request.app
-      .get("io")
-      .emit("nueva_valoracion", { medicoId: doctor.id, promedio, ratingCount });
+    request.app.get("io")?.emit?.("nueva_valoracion", {
+      medicoId: doctor.id,
+      promedio,
+      ratingCount,
+    });
     return response.json({
       message: "Valoración guardada",
       promedio,
@@ -152,9 +177,11 @@ export async function removeRating(request, response, next) {
     );
     await doctor.save();
     const { promedio, ratingCount } = doctor.toPublicJSON();
-    request.app
-      .get("io")
-      .emit("nueva_valoracion", { medicoId: doctor.id, promedio, ratingCount });
+    request.app.get("io")?.emit?.("nueva_valoracion", {
+      medicoId: doctor.id,
+      promedio,
+      ratingCount,
+    });
     return response.json({
       message: "Valoración eliminada",
       promedio,
@@ -167,22 +194,28 @@ export async function removeRating(request, response, next) {
 
 export async function updateMyDoctorProfile(request, response, next) {
   try {
-    const price = parseConsultationPrice(request.body.price);
-    if (price === null)
-      return response.status(400).json({ message: "Escribe un precio válido" });
-    const update = {
-      precio: String(price),
-      descripcion: cleanText(request.body.description, 500),
-      telefono: cleanText(request.body.phone, 30),
-      ubicacion: cleanText(request.body.location, 160),
-      idiomas: Array.isArray(request.body.languages)
-        ? request.body.languages
-            .map((item) => cleanText(item, 40))
-            .filter(Boolean)
-            .slice(0, 8)
-        : [],
-    };
-    if (update.telefono && !/^\d{10}$/.test(update.telefono))
+    // Parcial: solo se actualizan los campos presentes en el body.
+    const update = {};
+    if (request.body.price !== undefined && request.body.price !== null) {
+      const price = parseConsultationPrice(request.body.price);
+      if (price === null)
+        return response
+          .status(400)
+          .json({ message: "Escribe un precio válido" });
+      update.precio = price;
+    }
+    if (typeof request.body.description === "string")
+      update.descripcion = cleanText(request.body.description, 500);
+    if (typeof request.body.phone === "string")
+      update.telefono = cleanText(request.body.phone, 30);
+    if (typeof request.body.location === "string")
+      update.ubicacion = cleanText(request.body.location, 160);
+    if (Array.isArray(request.body.languages))
+      update.idiomas = request.body.languages
+        .map((item) => cleanText(item, 40))
+        .filter(Boolean)
+        .slice(0, 8);
+    if (update.telefono && !isValidPhone(update.telefono))
       return response
         .status(400)
         .json({ message: "El teléfono debe tener exactamente 10 números" });
@@ -195,10 +228,10 @@ export async function updateMyDoctorProfile(request, response, next) {
       return response
         .status(404)
         .json({ message: "Perfil médico no encontrado" });
-    request.app
-      .get("io")
-      .emit("perfil_actualizado", { medico: doctor.toPublicJSON() });
-    return response.json(doctor.toPublicJSON());
+    request.app.get("io")?.emit?.("perfil_actualizado", {
+      medico: doctor.toPublicJSON(request.user.id, { owner: true }),
+    });
+    return response.json(doctor.toPublicJSON(request.user.id, { owner: true }));
   } catch (error) {
     return next(error);
   }
@@ -231,7 +264,10 @@ export async function addComment(request, response, next) {
       return response
         .status(403)
         .json({ message: "Puedes comentar después de completar una cita" });
-    const doctor = await Doctor.findById(id);
+    const doctor = await Doctor.findOne({
+      _id: id,
+      verificationStatus: "verified",
+    });
     if (!doctor)
       return response.status(404).json({ message: "Médico no encontrado" });
     let comment = doctor.comentarios.find((item) => item.userId === userId);
@@ -245,7 +281,7 @@ export async function addComment(request, response, next) {
       comment = doctor.comentarios.at(-1);
     }
     await doctor.save();
-    request.app.get("io").emit("nuevo_comentario", {
+    request.app.get("io")?.emit?.("nuevo_comentario", {
       medicoId: doctor.id,
       comentario: commentView(comment),
     });
@@ -278,7 +314,7 @@ export async function updateComment(request, response, next) {
       fecha: new Date(),
     });
     await doctor.save();
-    request.app.get("io").emit("nuevo_comentario", {
+    request.app.get("io")?.emit?.("nuevo_comentario", {
       medicoId: doctor.id,
       comentario: commentView(comment),
     });
@@ -298,7 +334,7 @@ export async function deleteComment(request, response, next) {
     const { doctor, comment } = owned;
     comment.deleteOne();
     await doctor.save();
-    request.app.get("io").emit("comentario_eliminado", {
+    request.app.get("io")?.emit?.("comentario_eliminado", {
       medicoId: doctor.id,
       comentarioId: request.params.commentId,
     });
@@ -312,15 +348,17 @@ export async function listComments(request, response, next) {
   try {
     if (!isValidId(request.params.id))
       return response.status(400).json({ message: "Identificador inválido" });
-    const doctor = await Doctor.findById(request.params.id).select(
-      "comentarios",
-    );
+    const limit = parseLimit(request.query.limit);
+    // El límite lo aplica Mongo con $slice: no se cargan todos los
+    // comentarios en memoria para luego recortar.
+    const doctor = await Doctor.findOne({
+      _id: request.params.id,
+      verificationStatus: "verified",
+    }).select({ comentarios: { $slice: -limit } });
     if (!doctor)
       return response.status(404).json({ message: "Médico no encontrado" });
-    const limit = parseLimit(request.query.limit);
     return response.json(
-      doctor.comentarios
-        .slice(-limit)
+      [...doctor.comentarios]
         .reverse()
         .map((comment) => commentView(comment, request.user?.id)),
     );

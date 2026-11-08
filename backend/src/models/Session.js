@@ -10,6 +10,7 @@ const sessionSchema = new mongoose.Schema(
       index: true,
     },
     expiresAt: { type: Date, required: true, index: { expires: 0 } },
+    // Última actividad: solo se usa para no escribir en BD en cada petición.
     lastSeenAt: { type: Date, default: Date.now },
   },
   { timestamps: true },

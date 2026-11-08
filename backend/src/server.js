@@ -46,16 +46,18 @@ io.use(async (socket, next) => {
             expiresAt: { $gt: new Date() },
           })
         : null;
-    if (ticketSessionId && (!session || !verifySocketTicket(ticket, session)))
+    // Sin sesion valida no se mantiene la conexion.
+    if (!session) return next(new Error("Sesión inválida"));
+    if (ticketSessionId && !verifySocketTicket(ticket, session))
       return next(new Error("Credencial de tiempo real inválida"));
-    if (session) socket.user = { sub: session.user.toString() };
+    socket.user = { sub: session.user.toString() };
     return next();
   } catch {
     return next(new Error("Sesión inválida"));
   }
 });
 io.on("connection", (socket) => {
-  if (socket.user?.sub) socket.join(`user:${socket.user.sub}`);
+  socket.join(`user:${socket.user.sub}`);
 });
 httpServer.on("request", createApp({ frontendUrls, io }));
 

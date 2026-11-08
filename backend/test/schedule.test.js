@@ -54,7 +54,33 @@ test("validates weekly schedules and rejects overlapping periods", () => {
     }),
     null,
   );
-  assert.equal(
+  assert.deepEqual(
+    validateSchedule({
+      duration: 45,
+      timezoneOffset: -360,
+      rules: [
+        { day: 1, start: "09:00", end: "18:00" },
+        { day: 2, start: "09:00", end: "18:00" },
+        { day: 3, start: "09:00", end: "18:00" },
+        { day: 4, start: "09:00", end: "18:00" },
+        { day: 5, start: "09:00", end: "14:00" },
+      ],
+    }),
+    {
+      duration: 45,
+      timezoneOffset: -360,
+      rules: [
+        { day: 1, start: "09:00", end: "18:00" },
+        { day: 2, start: "09:00", end: "18:00" },
+        { day: 3, start: "09:00", end: "18:00" },
+        { day: 4, start: "09:00", end: "18:00" },
+        { day: 5, start: "09:00", end: "14:00" },
+      ],
+      blockedDates: [],
+    },
+  );
+  // Horarios distintos en días distintos sí se aceptan.
+  assert.notEqual(
     validateSchedule({
       duration: 45,
       timezoneOffset: -360,

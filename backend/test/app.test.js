@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { test } from "vitest";
 import { createApp } from "../src/app.js";
-import { interactionRateLimit } from "../src/middleware/rateLimit.js";
+import {
+  interactionRateLimit,
+  readRateLimit,
+} from "../src/middleware/rateLimit.js";
 
 async function withServer(run) {
   const server = http.createServer(
@@ -137,6 +140,47 @@ test("interaction rate limit exposes standard quota headers", () => {
   interactionRateLimit(request, limitedResponse, () => {});
   assert.equal(limitedResponse.statusCode, 429);
   assert.equal(limitedResponse.headers["x-ratelimit-limit"], "12");
+  assert.equal(limitedResponse.headers["x-ratelimit-remaining"], "0");
+  assert.ok(limitedResponse.headers["retry-after"]);
+});
+
+test("public read rate limit allows browsing and stops abuse", () => {
+  const createResponse = () => ({
+    headers: {},
+    statusCode: 200,
+    set(name, value) {
+      this.headers[name.toLowerCase()] = String(value);
+    },
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json() {
+      return this;
+    },
+  });
+  const request = {
+    ip: "test-read-limit",
+    baseUrl: "/test",
+    route: { path: "/read-quota" },
+    id: "req-2",
+  };
+  for (let attempt = 1; attempt <= 60; attempt += 1) {
+    const response = createResponse();
+    let nextCalled = false;
+    readRateLimit(request, response, () => {
+      nextCalled = true;
+    });
+    assert.equal(nextCalled, true);
+    assert.equal(response.headers["x-ratelimit-limit"], "60");
+    assert.equal(
+      response.headers["x-ratelimit-remaining"],
+      String(60 - attempt),
+    );
+  }
+  const limitedResponse = createResponse();
+  readRateLimit(request, limitedResponse, () => {});
+  assert.equal(limitedResponse.statusCode, 429);
   assert.equal(limitedResponse.headers["x-ratelimit-remaining"], "0");
   assert.ok(limitedResponse.headers["retry-after"]);
 });

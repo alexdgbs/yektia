@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  NAME_PATTERN,
+  NAME_TITLE,
+  PHONE_PATTERN,
+  PHONE_TITLE,
+  digitsOnly,
+} from "../../utils/patterns";
 export default function AccountSettings({ auth }) {
   const [form, setForm] = useState({
     nombre: auth.user.nombre,
@@ -43,8 +50,8 @@ export default function AccountSettings({ auth }) {
             required
             minLength="2"
             maxLength="80"
-            pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ.' -]+"
-            title="Usa únicamente letras"
+            pattern={NAME_PATTERN}
+            title={NAME_TITLE}
             value={form.nombre}
             placeholder="Tu nombre completo"
             onChange={(event) =>
@@ -57,20 +64,20 @@ export default function AccountSettings({ auth }) {
           <input
             type="tel"
             inputMode="numeric"
-            pattern="[0-9]{10}"
-            title="Ingresa los 10 números, sin espacios"
+            pattern={PHONE_PATTERN}
+            title={PHONE_TITLE}
             maxLength="10"
             value={form.telefono}
             placeholder="10 dígitos"
             onChange={(event) =>
               setForm({
                 ...form,
-                telefono: event.target.value.replace(/\D/g, "").slice(0, 10),
+                telefono: digitsOnly(event.target.value),
               })
             }
           />
         </label>
-        <button className="primary-button" disabled={busy}>
+        <button className="primary-button" type="submit" disabled={busy}>
           {busy ? "Guardando…" : "Guardar cuenta"}
         </button>
         {message && <small role="status">{message}</small>}
