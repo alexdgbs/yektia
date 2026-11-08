@@ -363,22 +363,34 @@
 .schedule-settings input[type="time"],
 .blocked-dates input[type="date"] {
   padding-right: 44px;
+  /* Referencia del indicador absoluto: sin esto se sale del campo. */
+  position: relative;
 }
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
-  .schedule-settings input[type="time"],
-  .blocked-dates input[type="date"] {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%237d8580' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
-    background-size: 12px 8px;
-  }
-
-  /* La nativa no se quita con display en Chrome de Android: se deja invisible. */
+  /* El icono nativo no se esconde de forma fiable en Chrome de Android
+     (ignora display y opacity): se viste con la flecha propia. */
   .schedule-settings input[type="time"]::-webkit-calendar-picker-indicator,
   .blocked-dates input[type="date"]::-webkit-calendar-picker-indicator {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%237d8580' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px 8px;
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    opacity: 1;
+    cursor: pointer;
+  }
+
+  .schedule-settings input[type="time"]::-webkit-inner-spin-button,
+  .blocked-dates input[type="date"]::-webkit-inner-spin-button {
     display: none;
-    opacity: 0;
+    -webkit-appearance: none;
   }
 }
 
