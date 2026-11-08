@@ -8,6 +8,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import { useDoctors } from "./hooks/useDoctors";
 import { useAuth } from "./hooks/useAuth";
 import { scrollIntoViewSmooth } from "./utils/scroll";
+import { API_URL } from "./services/apiConfig";
 import AccountPage from "./pages/AccountPage";
 import "./styles/index.css";
 
@@ -47,6 +48,12 @@ export default function App() {
     };
     window.addEventListener("popstate", handleNavigation);
     return () => window.removeEventListener("popstate", handleNavigation);
+  }, []);
+
+  // Un toque a salud al arrancar despierta la API en frío (Render duerme).
+  useEffect(() => {
+    if (!API_URL) return;
+    fetch(`${API_URL}/health`, { credentials: "omit" }).catch(() => {});
   }, []);
 
   const navigateTo = useCallback((path, options = {}) => {

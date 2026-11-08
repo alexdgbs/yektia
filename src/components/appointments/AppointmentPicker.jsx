@@ -266,7 +266,9 @@ export default function AppointmentPicker({ doctor, auth, onNavigate }) {
                 </div>
               ) : (
                 <p className="appointment-message">
-                  La cuenta administrativa no puede solicitar citas.
+                  {auth.user?.role === "admin"
+                    ? "La cuenta administrativa no puede solicitar citas."
+                    : "Esta es tu agenda. Cambia tus horarios desde tu cuenta."}
                 </p>
               )}
             </section>
@@ -391,7 +393,7 @@ export default function AppointmentPicker({ doctor, auth, onNavigate }) {
         </>
       ) : (
         <p className="appointment-message">
-          No hay horarios publicados por ahora.
+          Sin horarios disponibles por ahora.
         </p>
       )}
       {status && (
