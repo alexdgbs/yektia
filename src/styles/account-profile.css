@@ -227,61 +227,6 @@
   max-width: 520px;
 }
 
-.account-quick {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
-}
-
-.account-quick button {
-  display: grid;
-  gap: 6px;
-  justify-content: start;
-  justify-items: start;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--panel);
-  box-shadow: var(--shadow-card);
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: transform 180ms ease;
-}
-
-.account-quick button:hover {
-  transform: translateY(-2px);
-}
-
-.account-quick__icon {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 4px;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--green);
-}
-
-.account-quick__icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.account-quick strong {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.account-quick button > span:last-child {
-  color: var(--muted);
-  font-size: var(--text-caption);
-  line-height: 1.5;
-}
-
 .account-next {
   display: flex;
   align-items: center;
@@ -429,9 +374,11 @@
     background-size: 12px 8px;
   }
 
+  /* La nativa no se quita con display en Chrome de Android: se deja invisible. */
   .schedule-settings input[type="time"]::-webkit-calendar-picker-indicator,
   .blocked-dates input[type="date"]::-webkit-calendar-picker-indicator {
     display: none;
+    opacity: 0;
   }
 }
 
@@ -1455,10 +1402,6 @@
     font-size: 24px;
   }
 
-  .account-quick {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-
   .google-auth-panel h2,
   .settings-panel h2,
   .application-panel > .section-heading h2,
@@ -1580,10 +1523,6 @@
   .account-profile-card,
   .account-next {
     padding: 18px;
-  }
-
-  .account-quick {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .selected-date .slot-list {

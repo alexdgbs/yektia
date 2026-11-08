@@ -137,6 +137,25 @@
   color: var(--ink);
 }
 
+/* Rejilla pareja en móvil: dos columnas del mismo ancho y alto. */
+@media (max-width: 680px) {
+  .feed-categories {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .feed-categories button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Si el último queda solo en su fila, a todo lo ancho. */
+  .feed-categories button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 .directory-search {
   display: flex;
   align-items: center;
